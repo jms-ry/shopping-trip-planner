@@ -19,6 +19,14 @@ export type DraftItem = {
   storeName: string | null 
 };
 
+export type StoreRow = {
+  id: number;
+  name: string;
+  status: 'open' | 'done';
+  total: number;
+  pending: number;
+};
+
 export function getToBuy(): ToBuyRow[] {
   return db.getAllSync<ToBuyRow>(
     `SELECT id, name, store_name, created_at
@@ -97,4 +105,30 @@ export function createTrip(drafts: DraftItem[], toBuyIds: number[]): number {
     }
   });
   return tripId;
+}
+
+export function getStoresForTrip(tripId: number): StoreRow[] {
+  return db.getAllSync<StoreRow>(
+    `SELECT s.id, s.name, s.status,
+       (SELECT COUNT(*) FROM items i WHERE i.store_id = s.id) AS total,
+       (SELECT COUNT(*) FROM items i WHERE i.store_id = s.id AND i.status = 'pending') AS pending
+     FROM stores s
+     WHERE s.trip_id = ?
+     ORDER BY s.id`,
+    [tripId]
+  );
+}
+
+export function getPendingAnyStoreCount(tripId: number): number {
+  const row = db.getFirstSync<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM items
+     WHERE trip_id = ? AND store_id IS NULL AND status = 'pending'`,
+    [tripId]
+  );
+  return row?.n ?? 0;
+}
+
+// Marked items keep their status; only the store itself is reopened.
+export function reopenStore(storeId: number) {
+  db.runSync(`UPDATE stores SET status = 'open' WHERE id = ?`, [storeId]);
 }
