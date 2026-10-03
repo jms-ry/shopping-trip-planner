@@ -27,6 +27,16 @@ export type StoreRow = {
   pending: number;
 };
 
+export type ItemStatus = 'pending' | 'bought' | 'no_stock' | 'skipped';
+
+export type ShopItem = {
+  id: number;
+  name: string;
+  store_id: number | null; // null = any store
+  status: ItemStatus;
+  is_unplanned: number;
+};
+
 export function getToBuy(): ToBuyRow[] {
   return db.getAllSync<ToBuyRow>(
     `SELECT id, name, store_name, created_at
@@ -131,4 +141,63 @@ export function getPendingAnyStoreCount(tripId: number): number {
 // Marked items keep their status; only the store itself is reopened.
 export function reopenStore(storeId: number) {
   db.runSync(`UPDATE stores SET status = 'open' WHERE id = ?`, [storeId]);
+}
+
+export function getStoreById(
+  storeId: number
+): { id: number; name: string; status: 'open' | 'done' } | null {
+  return db.getFirstSync(
+    'SELECT id, name, status FROM stores WHERE id = ?',
+    [storeId]
+  );
+}
+
+// Own items first, then any-store items that are unresolved or resolved at this store.
+export function getItemsForStore(tripId: number, storeId: number): ShopItem[] {
+  return db.getAllSync<ShopItem>(
+    `SELECT id, name, store_id, status, is_unplanned
+     FROM items
+     WHERE trip_id = ?
+       AND (
+         store_id = ?
+         OR (store_id IS NULL AND (status = 'pending' OR resolved_store_id = ?))
+       )
+     ORDER BY (store_id IS NULL), id`,
+    [tripId, storeId, storeId]
+  );
+}
+
+export function setItemStatus(
+  itemId: number,
+  status: ItemStatus,
+  resolvedStoreId: number | null
+) {
+  db.runSync(
+    'UPDATE items SET status = ?, resolved_store_id = ? WHERE id = ?',
+    [status, resolvedStoreId, itemId]
+  );
+}
+
+export function addUnplannedItem(tripId: number, storeId: number, name: string) {
+  db.runSync(
+    `INSERT INTO items (trip_id, name, store_id, status, is_unplanned)
+     VALUES (?, ?, ?, 'bought', 1)`,
+    [tripId, name, storeId]
+  );
+}
+
+export function deleteUnplannedItem(itemId: number) {
+  db.runSync('DELETE FROM items WHERE id = ? AND is_unplanned = 1', [itemId]);
+}
+
+export function markStoreDone(storeId: number) {
+  db.runSync(`UPDATE stores SET status = 'done' WHERE id = ?`, [storeId]);
+}
+
+export function getOpenStoreCount(tripId: number): number {
+  const row = db.getFirstSync<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM stores WHERE trip_id = ? AND status = 'open'`,
+    [tripId]
+  );
+  return row?.n ?? 0;
 }
