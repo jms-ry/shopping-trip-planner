@@ -500,3 +500,14 @@
 {"_e":"metro:bundling:started","_t":1791026521791,"id":"5","platform":"android","environment":null,"entry":"index.ts"}
 {"_e":"metro:bundling:progress","_t":1791026521791,"id":"5","progress":0,"total":1,"current":0}
 {"_e":"metro:bundling:done","_t":1791026521897,"id":"5","total":1,"ms":106.267542}
+{"_e":"metro:bundling:started","_t":1791027883541,"id":"7","platform":"android","environment":null,"entry":"index.ts"}
+{"_e":"metro:bundling:progress","_t":1791027883542,"id":"7","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1791027883543,"id":"7","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1791027883665,"id":"7","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1791027883762,"id":"7","total":1,"ms":220.619426}
+{"_e":"metro:bundling:started","_t":1791028073168,"id":"9","platform":"android","environment":null,"entry":"index.ts"}
+{"_e":"metro:bundling:progress","_t":1791028073168,"id":"9","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1791028073270,"id":"9","total":1,"ms":101.995821}
+{"_e":"metro:bundling:started","_t":1791029442401,"id":"a","platform":"android","environment":null,"entry":"index.ts"}
+{"_e":"metro:bundling:progress","_t":1791029442401,"id":"a","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:done","_t":1791029442482,"id":"a","total":1,"ms":81.194198}

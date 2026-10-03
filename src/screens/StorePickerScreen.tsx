@@ -20,7 +20,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
   // Single store: skip the picker. Runs on mount only.
   useEffect(() => {
     const rows = getStoresForTrip(tripId);
-    if (rows.length === 1) {
+    if (rows.length === 1 && rows[0].status === 'open') {
       navigation.replace('StoreShopping', { tripId, storeId: rows[0].id });
     }
   }, []);

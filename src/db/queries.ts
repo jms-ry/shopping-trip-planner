@@ -46,6 +46,15 @@ export type ReviewItem = {
   resolved_store_name: string | null;
 };
 
+export type InProgressTrip = {
+  id: number;
+  name: string;
+  created_at: string;
+  item_count: number;
+  marked_count: number;
+  bought_count: number;
+  open_stores: number;
+};
 export function getToBuy(): ToBuyRow[] {
   return db.getAllSync<ToBuyRow>(
     `SELECT id, name, store_name, created_at
@@ -264,4 +273,67 @@ export function getTripStatus(tripId: number): 'planning' | 'shopping' | 'comple
     [tripId]
   );
   return row?.status ?? null;
+}
+
+export function getInProgressTrips(): InProgressTrip[] {
+  return db.getAllSync<InProgressTrip>(
+    `SELECT t.id, t.name, t.created_at,
+       (SELECT COUNT(*) FROM items i WHERE i.trip_id = t.id) AS item_count,
+       (SELECT COUNT(*) FROM items i WHERE i.trip_id = t.id AND i.status != 'pending') AS marked_count,
+       (SELECT COUNT(*) FROM items i WHERE i.trip_id = t.id AND i.status = 'bought') AS bought_count,
+       (SELECT COUNT(*) FROM stores s WHERE s.trip_id = t.id AND s.status = 'open') AS open_stores
+     FROM trips t
+     WHERE t.status = 'shopping'
+     ORDER BY t.created_at DESC, t.id DESC`
+  );
+}
+
+// Only for trips with nothing bought. Returns false (and changes nothing) otherwise.
+export function discardTrip(tripId: number): boolean {
+  const bought = db.getFirstSync<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM items WHERE trip_id = ? AND status = 'bought'`,
+    [tripId]
+  );
+  if ((bought?.n ?? 0) > 0) return false;
+
+  db.withTransactionSync(() => {
+    db.runSync(
+      `INSERT INTO to_buy (name, store_name, from_trip_id)
+       SELECT i.name, s.name, i.trip_id
+       FROM items i LEFT JOIN stores s ON s.id = i.store_id
+       WHERE i.trip_id = ? AND i.status IN ('pending', 'no_stock')`,
+      [tripId]
+    );
+    db.runSync('DELETE FROM items WHERE trip_id = ?', [tripId]);
+    db.runSync('DELETE FROM stores WHERE trip_id = ?', [tripId]);
+    db.runSync('DELETE FROM trips WHERE id = ?', [tripId]);
+  });
+  return true;
+}
+
+// For trips with some bought items: save them as a journey, send the rest to To buy.
+export function endTripEarly(tripId: number) {
+  db.withTransactionSync(() => {
+    // Never-attempted items go back to To buy and leave the journey.
+    db.runSync(
+      `INSERT INTO to_buy (name, store_name, from_trip_id)
+       SELECT i.name, s.name, i.trip_id
+       FROM items i LEFT JOIN stores s ON s.id = i.store_id
+       WHERE i.trip_id = ? AND i.status = 'pending'`,
+      [tripId]
+    );
+    db.runSync(`DELETE FROM items WHERE trip_id = ? AND status = 'pending'`, [tripId]);
+
+    // No-stock items go to To buy too, but stay in the journey (same as finishTrip).
+    db.runSync(
+      `INSERT INTO to_buy (name, store_name, from_trip_id)
+       SELECT i.name, s.name, i.trip_id
+       FROM items i LEFT JOIN stores s ON s.id = i.store_id
+       WHERE i.trip_id = ? AND i.status = 'no_stock'`,
+      [tripId]
+    );
+
+    db.runSync(`UPDATE stores SET status = 'done' WHERE trip_id = ?`, [tripId]);
+    db.runSync(`UPDATE trips SET status = 'completed' WHERE id = ?`, [tripId]);
+  });
 }

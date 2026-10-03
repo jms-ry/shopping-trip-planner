@@ -10,6 +10,10 @@ import {
   seedToBuy,
   ToBuyRow,
   TripRow,
+  discardTrip,
+  getInProgressTrips,
+  InProgressTrip,
+  endTripEarly,
 } from '../db/queries';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Landing'>;
@@ -17,8 +21,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Landing'>;
 export default function LandingScreen({ navigation }: Props) {
   const [toBuy, setToBuy] = useState<ToBuyRow[]>([]);
   const [trips, setTrips] = useState<TripRow[]>([]);
-
+  const [inProgress, setInProgress] = useState<InProgressTrip[]>([]);
   const load = () => {
+    setToBuy(getToBuy());
+    setTrips(getCompletedTrips());
+    setInProgress(getInProgressTrips());
     setToBuy(getToBuy());
     setTrips(getCompletedTrips());
   };
@@ -44,11 +51,91 @@ export default function LandingScreen({ navigation }: Props) {
     ]);
   };
 
+  const resume = (trip: InProgressTrip) => {
+    if (trip.open_stores === 0) {
+      navigation.navigate('Review', { tripId: trip.id });
+    } else {
+      navigation.navigate('StorePicker', { tripId: trip.id });
+    }
+  };
+
+  const confirmDiscard = (trip: InProgressTrip) => {
+    Alert.alert(
+      'Discard trip',
+      'Every item goes back to your To buy list. Nothing was bought on this trip.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Discard',
+          style: 'destructive',
+          onPress: () => {
+            discardTrip(trip.id);
+            load();
+          },
+        },
+      ]
+    );
+  };
+
+  const confirmEndTrip = (trip: InProgressTrip) => {
+    const unbought = trip.item_count - trip.bought_count;
+    Alert.alert(
+      'End trip',
+      `The ${trip.bought_count} bought item${trip.bought_count === 1 ? '' : 's'} will be saved as a journey. Unbought items go to your To buy list (${unbought}).`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'End trip',
+          onPress: () => {
+            endTripEarly(trip.id);
+            load();
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Plan')}>
         <Text style={styles.primaryButtonText}>New trip</Text>
       </Pressable>
+      {inProgress.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>In progress ({inProgress.length})</Text>
+          {inProgress.map((trip) => (
+            <View key={trip.id} style={styles.card}>
+              <View style={styles.cardText}>
+                <Text style={styles.itemName}>{trip.name}</Text>
+                <Text style={styles.itemMeta}>
+                  {trip.created_at.slice(0, 10)} · {trip.marked_count}/{trip.item_count} marked
+                </Text>
+              </View>
+              <Pressable style={styles.smallButton} onPress={() => resume(trip)}>
+                <Text style={styles.smallButtonText}>Resume</Text>
+              </Pressable>
+              {(() => {
+                const allBought = trip.item_count > 0 && trip.bought_count === trip.item_count;
+                if (allBought) return null; // Trip A: resume only
+                if (trip.bought_count > 0) {
+                  // Trip B: keep what was bought
+                  return (
+                    <Pressable style={styles.deleteButton} onPress={() => confirmEndTrip(trip)}>
+                      <Text style={styles.deleteButtonText}>End trip</Text>
+                    </Pressable>
+                  );
+                }
+                // Trip C: nothing bought
+                return (
+                  <Pressable style={styles.deleteButton} onPress={() => confirmDiscard(trip)}>
+                    <Text style={styles.deleteButtonText}>Discard</Text>
+                  </Pressable>
+                );
+              })()}
+            </View>
+          ))}
+        </>
+      )}
 
       <Text style={styles.sectionTitle}>To buy ({toBuy.length})</Text>
       {toBuy.length === 0 && (
