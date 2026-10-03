@@ -15,7 +15,6 @@ import {
   addUnplannedItem,
   deleteUnplannedItem,
   getItemsForStore,
-  getOpenStoreCount,
   getStoreById,
   ItemStatus,
   markStoreDone,

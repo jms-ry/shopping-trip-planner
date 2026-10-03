@@ -7,7 +7,6 @@ import {
   deleteToBuy,
   getCompletedTrips,
   getToBuy,
-  seedToBuy,
   ToBuyRow,
   TripRow,
   discardTrip,
@@ -175,18 +174,6 @@ export default function LandingScreen({ navigation }: Props) {
           </View>
         </Pressable>
       ))}
-
-      {__DEV__ && (
-        <Pressable
-          style={styles.devButton}
-          onPress={() => {
-            seedToBuy();
-            load();
-          }}
-        >
-          <Text style={styles.devButtonText}>[dev] Seed To buy</Text>
-        </Pressable>
-      )}
     </ScrollView>
   );
 }
@@ -211,6 +198,4 @@ const styles = StyleSheet.create({
   smallButtonText: { color: '#1f6feb', fontWeight: '600' },
   deleteButton: { paddingVertical: 8, paddingHorizontal: 6 },
   deleteButtonText: { color: '#d1242f', fontWeight: '600' },
-  devButton: { marginTop: 24, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#999', borderStyle: 'dashed', borderRadius: 8 },
-  devButtonText: { color: '#666' },
 });

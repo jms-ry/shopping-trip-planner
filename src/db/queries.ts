@@ -78,14 +78,6 @@ export function getCompletedTrips(): TripRow[] {
   );
 }
 
-// Dev only: lets you see the To buy list before the shopping flow exists.
-export function seedToBuy() {
-  db.runSync(
-    `INSERT INTO to_buy (name, store_name) VALUES (?, ?), (?, ?)`,
-    ['Cooking oil', 'Palengke', 'Notebook', null]
-  );
-}
-
 export function getToBuyById(id: number): ToBuyRow | null {
   return db.getFirstSync<ToBuyRow>(
     'SELECT id, name, store_name, created_at FROM to_buy WHERE id = ?',
@@ -210,14 +202,6 @@ export function deleteUnplannedItem(itemId: number) {
 
 export function markStoreDone(storeId: number) {
   db.runSync(`UPDATE stores SET status = 'done' WHERE id = ?`, [storeId]);
-}
-
-export function getOpenStoreCount(tripId: number): number {
-  const row = db.getFirstSync<{ n: number }>(
-    `SELECT COUNT(*) AS n FROM stores WHERE trip_id = ? AND status = 'open'`,
-    [tripId]
-  );
-  return row?.n ?? 0;
 }
 
 export function getOtherOpenStoreCount(tripId: number, storeId: number): number {
