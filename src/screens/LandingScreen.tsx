@@ -75,14 +75,18 @@ export default function LandingScreen({ navigation }: Props) {
       <Text style={styles.sectionTitle}>Saved journeys ({trips.length})</Text>
       {trips.length === 0 && <Text style={styles.empty}>No completed trips yet.</Text>}
       {trips.map((trip) => (
-        <View key={trip.id} style={styles.card}>
+        <Pressable
+          key={trip.id}
+          style={styles.card}
+          onPress={() => navigation.navigate('Review', { tripId: trip.id })}
+        >
           <View style={styles.cardText}>
             <Text style={styles.itemName}>{trip.name}</Text>
             <Text style={styles.itemMeta}>
               {trip.created_at.slice(0, 10)} · {trip.bought_count}/{trip.item_count} bought
             </Text>
           </View>
-        </View>
+        </Pressable>
       ))}
 
       {__DEV__ && (
@@ -112,16 +116,7 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 8, marginBottom: 8 },
   empty: { color: '#666', marginBottom: 12 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    marginBottom: 8,
-    gap: 8,
-  },
+  card: {flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 8, gap: 8, },
   cardText: { flex: 1 },
   itemName: { fontSize: 16, fontWeight: '500' },
   itemMeta: { color: '#666', marginTop: 2 },

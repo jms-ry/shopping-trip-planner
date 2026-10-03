@@ -37,6 +37,15 @@ export type ShopItem = {
   is_unplanned: number;
 };
 
+export type ReviewItem = {
+  id: number;
+  name: string;
+  status: ItemStatus;
+  is_unplanned: number;
+  store_name: string | null;
+  resolved_store_name: string | null;
+};
+
 export function getToBuy(): ToBuyRow[] {
   return db.getAllSync<ToBuyRow>(
     `SELECT id, name, store_name, created_at
@@ -200,4 +209,59 @@ export function getOpenStoreCount(tripId: number): number {
     [tripId]
   );
   return row?.n ?? 0;
+}
+
+export function getOtherOpenStoreCount(tripId: number, storeId: number): number {
+  const row = db.getFirstSync<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM stores
+     WHERE trip_id = ? AND status = 'open' AND id != ?`,
+    [tripId, storeId]
+  );
+  return row?.n ?? 0;
+}
+
+// Same name (case-insensitive) reuses and reopens the existing store.
+export function addOrReopenStore(tripId: number, name: string): number {
+  const existing = db.getFirstSync<{ id: number }>(
+    'SELECT id FROM stores WHERE trip_id = ? AND LOWER(name) = LOWER(?)',
+    [tripId, name]
+  );
+  if (existing) {
+    db.runSync(`UPDATE stores SET status = 'open' WHERE id = ?`, [existing.id]);
+    return existing.id;
+  }
+  return db.runSync(
+    'INSERT INTO stores (trip_id, name) VALUES (?, ?)',
+    [tripId, name]
+  ).lastInsertRowId;
+}
+
+// Unmarked any-store items become no_stock so finishTrip sends them to To buy.
+export function moveLeftoversToNoStock(tripId: number, lastStoreId: number) {
+  db.runSync(
+    `UPDATE items SET status = 'no_stock', resolved_store_id = ?
+     WHERE trip_id = ? AND store_id IS NULL AND status = 'pending'`,
+    [lastStoreId, tripId]
+  );
+}
+
+export function getReviewItems(tripId: number): ReviewItem[] {
+  return db.getAllSync<ReviewItem>(
+    `SELECT i.id, i.name, i.status, i.is_unplanned,
+            s.name AS store_name, r.name AS resolved_store_name
+     FROM items i
+     LEFT JOIN stores s ON s.id = i.store_id
+     LEFT JOIN stores r ON r.id = i.resolved_store_id
+     WHERE i.trip_id = ?
+     ORDER BY i.id`,
+    [tripId]
+  );
+}
+
+export function getTripStatus(tripId: number): 'planning' | 'shopping' | 'completed' | null {
+  const row = db.getFirstSync<{ status: 'planning' | 'shopping' | 'completed' }>(
+    'SELECT status FROM trips WHERE id = ?',
+    [tripId]
+  );
+  return row?.status ?? null;
 }

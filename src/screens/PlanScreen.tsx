@@ -66,6 +66,7 @@ export default function PlanScreen({ navigation, route }: Props) {
         onChangeText={setNameInput}
         placeholder="e.g. Cooking oil"
         returnKeyType="next"
+        placeholderTextColor="#888"
       />
 
       <Text style={styles.label}>Store</Text>
@@ -75,6 +76,7 @@ export default function PlanScreen({ navigation, route }: Props) {
         onChangeText={setStoreInput}
         placeholder={anyStore ? 'Any store' : 'e.g. Palengke'}
         editable={!anyStore}
+        placeholderTextColor="#888"
       />
 
       <View style={styles.switchRow}>
@@ -118,7 +120,7 @@ export default function PlanScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
   label: { fontWeight: '600', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, color: '#111', fontSize: 16 },
   inputDisabled: { backgroundColor: '#f0f0f0' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
   switchLabel: { fontSize: 16 },
