@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
+import { colors } from '../theme';
 import {
   getPendingAnyStoreCount,
   getStoresForTrip,
@@ -83,13 +84,16 @@ export default function StorePickerScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
-  title: { fontSize: 22, fontWeight: '700' },
-  subtitle: { color: '#666', marginTop: 4, marginBottom: 16 },
-  card: {flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1, borderColor: '#1f6feb', borderRadius: 12, marginBottom: 10, gap: 8,},
-  cardDone: { borderColor: '#ccc', backgroundColor: '#f5f5f5' },
+  title: { fontSize: 22, fontWeight: '700', color: colors.text },
+  subtitle: { color: colors.textMuted, marginTop: 4, marginBottom: 16 },
+  card: {
+    flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1.5,
+    borderColor: colors.accent, backgroundColor: colors.surface, borderRadius: 12, marginBottom: 10, gap: 8,
+  },
+  cardDone: { borderColor: colors.border, backgroundColor: colors.muted },
   cardText: { flex: 1 },
-  storeName: { fontSize: 18, fontWeight: '600' },
-  meta: { color: '#666', marginTop: 2 },
-  reopenButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#e8f0fe' },
-  reopenText: { color: '#1f6feb', fontWeight: '600' },
+  storeName: { fontSize: 18, fontWeight: '600', color: colors.text },
+  meta: { color: colors.textMuted, marginTop: 2 },
+  reopenButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: colors.tint },
+  reopenText: { color: colors.accent, fontWeight: '600' },
 });

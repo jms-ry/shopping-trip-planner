@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { colors } from '../theme';
 import {
   Pressable,
   ScrollView,
@@ -28,9 +29,9 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreShopping'>;
 
 const OPTIONS: { status: Exclude<ItemStatus, 'pending'>; label: string; color: string }[] = [
-  { status: 'bought', label: 'Bought', color: '#1a7f37' },
-  { status: 'no_stock', label: 'No stock', color: '#bc4c00' },
-  { status: 'skipped', label: 'Skip', color: '#6e7781' },
+  { status: 'bought', label: 'Bought', color: colors.success },
+  { status: 'no_stock', label: 'No stock', color: colors.warning },
+  { status: 'skipped', label: 'Skip', color: colors.neutral },
 ];
 
 export default function StoreShoppingScreen({ navigation, route }: Props) {
@@ -210,8 +211,11 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             <Pressable style={styles.modalSecondary} onPress={sendLeftoversToBuyList}>
               <Text style={styles.modalSecondaryText}>Move to To buy list</Text>
             </Pressable>
-            <Pressable onPress={() => setShowLeftover(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+            <Pressable
+             style={styles.modalCancel}
+             onPress={() => setShowLeftover(false)}
+             >
+              <Text style={styles.modalCancelText}>Cancel</Text>
             </Pressable>
           </View>
         </View>
@@ -222,31 +226,38 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
-  empty: { color: '#666', marginBottom: 12 },
-  card: { padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 10 },
+  empty: { color: colors.textMuted, marginBottom: 12 },
+  card: { padding: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 10, marginBottom: 10 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  itemName: { fontSize: 16, fontWeight: '600', flexShrink: 1 },
-  tag: { fontSize: 12, color: '#555', backgroundColor: '#eee', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  removeText: { color: '#d1242f', fontWeight: '600', marginLeft: 'auto' },
+  itemName: { fontSize: 16, fontWeight: '600', flexShrink: 1, color: colors.text },
+  tag: { fontSize: 12, color: colors.textMuted, backgroundColor: colors.muted, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  removeText: { color: colors.danger, fontWeight: '600', marginLeft: 'auto' },
   optionRow: { flexDirection: 'row', gap: 8 },
   optionButton: { flex: 1, paddingVertical: 10, borderWidth: 1.5, borderRadius: 8, alignItems: 'center' },
   optionText: { fontWeight: '600' },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 20, marginBottom: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 20, marginBottom: 8, color: colors.text },
   addRow: { flexDirection: 'row', gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, fontSize: 16 },
-  addButton: { backgroundColor: '#56e2ec', paddingHorizontal: 18, borderRadius: 8, justifyContent: 'center' },
-  addButtonText: { color: '#010408', fontWeight: '600' },
-  hint: { color: '#b35900', marginTop: 16 },
-  doneButton: { backgroundColor: '#1f6feb', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 16 },
-  doneDisabled: { backgroundColor: '#a8c4f0' },
-  doneText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  input: {
+    flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 12,
+    fontSize: 16, color: colors.text, backgroundColor: colors.surface,
+  },
+  addButton: { backgroundColor: colors.primary, paddingHorizontal: 18, borderRadius: 8, justifyContent: 'center' },
+  addButtonText: { color: colors.onPrimary, fontWeight: '700' },
+  hint: { color: colors.warning, marginTop: 16 },
+  doneButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 16 },
+  doneDisabled: { backgroundColor: colors.primaryDisabled },
+  doneText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  modalBox: { backgroundColor: '#fff', borderRadius: 12, padding: 16, gap: 10 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#111' },
+  modalBox: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, gap: 10 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   modalBody: { color: '#333' },
-  modalPrimary: { backgroundColor: '#1f6feb', padding: 14, borderRadius: 10, alignItems: 'center' },
-  modalSecondary: { borderWidth: 1.5, borderColor: '#bc4c00', padding: 14, borderRadius: 10, alignItems: 'center' },
-  modalSecondaryText: { color: '#bc4c00', fontWeight: '600' },
-  modalCancel: { color: '#666', textAlign: 'center', paddingVertical: 6 },
-  modalInput: {borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 14, fontSize: 16, color: '#111', backgroundColor: '#fff',},
+  modalInput: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 14,
+    fontSize: 16, color: colors.text, backgroundColor: colors.surface,
+  },
+  modalPrimary: { backgroundColor: colors.primary, padding: 14, borderRadius: 10, alignItems: 'center' },
+  modalSecondary: { borderWidth: 1.5, borderColor: colors.accent, padding: 14, borderRadius: 10, alignItems: 'center' },
+  modalSecondaryText: { color: colors.accent, fontWeight: '600' },
+  modalCancel: { backgroundColor: colors.amber, padding: 14, borderRadius: 10, alignItems: 'center' },
+  modalCancelText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
 });

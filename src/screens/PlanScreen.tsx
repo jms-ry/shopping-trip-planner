@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { colors } from '../theme';
+
 import {
   Alert,
   Pressable,
@@ -81,7 +83,7 @@ export default function PlanScreen({ navigation, route }: Props) {
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Any store</Text>
-        <Switch value={anyStore} onValueChange={setAnyStore} />
+        <Switch value={anyStore} onValueChange={setAnyStore} trackColor={{ true: colors.primary, false: colors.border }} thumbColor={colors.surface} />
       </View>
 
       <Pressable style={styles.addButton} onPress={addItem}>
@@ -89,7 +91,7 @@ export default function PlanScreen({ navigation, route }: Props) {
       </Pressable>
 
       <Text style={styles.sectionTitle}>Items ({items.length})</Text>
-      {items.length === 0 && <Text style={styles.empty}>No items yet.</Text>}
+      {items.length === 0 && <Text style={styles.empty}>No items yet. Add what you need above.</Text>}
       {items.map((item, index) => (
         <View key={`${item.name}-${index}`} style={styles.card}>
           <View style={styles.cardText}>
@@ -119,22 +121,28 @@ export default function PlanScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
-  label: { fontWeight: '600', marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, color: '#111', fontSize: 16 },
-  inputDisabled: { backgroundColor: '#f0f0f0' },
+  label: { fontWeight: '600', marginBottom: 4, marginTop: 8, color: colors.text },
+  input: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 12,
+    fontSize: 16, color: colors.text, backgroundColor: colors.surface,
+  },
+  inputDisabled: { backgroundColor: colors.muted },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  switchLabel: { fontSize: 16 },
-  addButton: { backgroundColor: '#56e2ec', padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 12 },
-  addButtonText: { color: '#010408', fontWeight: '600', fontSize: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 8 },
-  empty: { color: '#666' },
-  card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 8, gap: 8 },
+  switchLabel: { fontSize: 16, color: colors.text },
+  addButton: { backgroundColor: colors.primary, padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 12 },
+  addButtonText: { color: colors.onPrimary, fontWeight: '700', fontSize: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 8, color: colors.text },
+  empty: { color: colors.textMuted },
+  card: {
+    flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1,
+    borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 10, marginBottom: 8, gap: 8,
+  },
   cardText: { flex: 1 },
-  itemName: { fontSize: 16, fontWeight: '500' },
-  itemMeta: { color: '#666', marginTop: 2 },
-  removeText: { color: '#d1242f', fontWeight: '600' },
-  hint: { color: '#b35900', marginTop: 8 },
-  proceedButton: { backgroundColor: '#1f6feb', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 16 },
-  proceedDisabled: { backgroundColor: '#a8c4f0' },
-  proceedText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  itemName: { fontSize: 16, fontWeight: '500', color: colors.text },
+  itemMeta: { color: colors.textMuted, marginTop: 2 },
+  removeText: { color: colors.danger, fontWeight: '600' },
+  hint: { color: colors.warning, marginTop: 8 },
+  proceedButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 16 },
+  proceedDisabled: { backgroundColor: colors.primaryDisabled },
+  proceedText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
 });

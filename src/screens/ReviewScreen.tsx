@@ -5,14 +5,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { finishTrip } from '../db';
 import { getReviewItems, getTripStatus, ItemStatus, ReviewItem } from '../db/queries';
+import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Review'>;
 
 const SECTIONS: { status: ItemStatus; label: string; color: string }[] = [
-  { status: 'bought', label: 'Bought', color: '#1a7f37' },
-  { status: 'no_stock', label: 'No stock', color: '#bc4c00' },
-  { status: 'skipped', label: 'Skipped', color: '#6e7781' },
-  { status: 'pending', label: 'Not marked', color: '#d1242f' },
+  { status: 'bought', label: 'Bought', color: colors.success },
+  { status: 'no_stock', label: 'No stock', color: colors.warning },
+  { status: 'skipped', label: 'Skipped', color: colors.neutral },
+  { status: 'pending', label: 'Not marked', color: colors.danger },
 ];
 
 export default function ReviewScreen({ navigation, route }: Props) {
@@ -107,13 +108,13 @@ export default function ReviewScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 12, marginBottom: 8 },
-  card: { padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 8 },
-  itemName: { fontSize: 16, fontWeight: '500' },
-  itemMeta: { color: '#666', marginTop: 2 },
-  hint: { color: '#b35900', marginTop: 16 },
-  finishButton: { backgroundColor: '#1f6feb', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 20 },
-  finishDisabled: { backgroundColor: '#a8c4f0' },
-  finishText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  secondaryButton: { borderWidth: 1.5, borderColor: '#1f6feb', padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-  secondaryText: { color: '#1f6feb', fontWeight: '600', fontSize: 16 },
+  card: { padding: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 10, marginBottom: 8 },
+  itemName: { fontSize: 16, fontWeight: '500', color: colors.text },
+  itemMeta: { color: colors.textMuted, marginTop: 2 },
+  hint: { color: colors.warning, marginTop: 16 },
+  finishButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 20 },
+  finishDisabled: { backgroundColor: colors.primaryDisabled },
+  finishText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  secondaryButton: { borderWidth: 1.5, borderColor: colors.accent, padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  secondaryText: { color: colors.accent, fontWeight: '600', fontSize: 16 },
 });

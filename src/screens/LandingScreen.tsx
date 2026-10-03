@@ -3,6 +3,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
+import { colors } from '../theme';
+
 import {
   deleteToBuy,
   getCompletedTrips,
@@ -138,7 +140,7 @@ export default function LandingScreen({ navigation }: Props) {
 
       <Text style={styles.sectionTitle}>To buy ({toBuy.length})</Text>
       {toBuy.length === 0 && (
-        <Text style={styles.empty}>Nothing here. Items with no stock land here after a trip.</Text>
+        <Text style={styles.empty}>Nothing to buy later. Items marked No stock land here after a trip.</Text>
       )}
       {toBuy.map((item) => (
         <View key={item.id} style={styles.card}>
@@ -159,7 +161,7 @@ export default function LandingScreen({ navigation }: Props) {
       ))}
 
       <Text style={styles.sectionTitle}>Saved journeys ({trips.length})</Text>
-      {trips.length === 0 && <Text style={styles.empty}>No completed trips yet.</Text>}
+      {trips.length === 0 && <Text style={styles.empty}>No journeys yet. Finish a trip and it will be saved here.</Text>}
       {trips.map((trip) => (
         <Pressable
           key={trip.id}
@@ -180,22 +182,19 @@ export default function LandingScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
-  primaryButton: {
-    backgroundColor: '#1f6feb',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 24,
+  primaryButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 10, alignItems: 'center', marginBottom: 24 },
+  primaryButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 8, marginBottom: 8, color: colors.text },
+  empty: { color: colors.textMuted, marginBottom: 12 },
+  card: {
+    flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1,
+    borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 10, marginBottom: 8, gap: 8,
   },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 8, marginBottom: 8 },
-  empty: { color: '#666', marginBottom: 12 },
-  card: {flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 8, gap: 8, },
   cardText: { flex: 1 },
-  itemName: { fontSize: 16, fontWeight: '500' },
-  itemMeta: { color: '#666', marginTop: 2 },
-  smallButton: { backgroundColor: '#e8f0fe', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8 },
-  smallButtonText: { color: '#1f6feb', fontWeight: '600' },
+  itemName: { fontSize: 16, fontWeight: '500', color: colors.text },
+  itemMeta: { color: colors.textMuted, marginTop: 2 },
+  smallButton: { backgroundColor: colors.tint, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8 },
+  smallButtonText: { color: colors.accent, fontWeight: '600' },
   deleteButton: { paddingVertical: 8, paddingHorizontal: 6 },
-  deleteButtonText: { color: '#d1242f', fontWeight: '600' },
+  deleteButtonText: { color: colors.danger, fontWeight: '600' },
 });
