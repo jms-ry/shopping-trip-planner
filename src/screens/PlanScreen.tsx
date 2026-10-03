@@ -121,17 +121,17 @@ export default function PlanScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
-  label: { fontWeight: '600', marginBottom: 4, marginTop: 8, color: colors.text },
+  label: { fontWeight: '600', marginBottom: 4, marginTop: 8, color: colors.textOnDark },
   input: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 12,
     fontSize: 16, color: colors.text, backgroundColor: colors.surface,
   },
   inputDisabled: { backgroundColor: colors.muted },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
-  switchLabel: { fontSize: 16, color: colors.text },
+  switchLabel: { fontSize: 16, color: colors.textOnDark },
   addButton: { backgroundColor: colors.primary, padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 12 },
   addButtonText: { color: colors.onPrimary, fontWeight: '700', fontSize: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 8, color: colors.text },
+  sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 8, color: colors.textOnDark },
   empty: { color: colors.textMuted },
   card: {
     flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   cardText: { flex: 1 },
   itemName: { fontSize: 16, fontWeight: '500', color: colors.text },
-  itemMeta: { color: colors.textMuted, marginTop: 2 },
+  itemMeta: { color: colors.text, marginTop: 2 },
   removeText: { color: colors.danger, fontWeight: '600' },
   hint: { color: colors.warning, marginTop: 8 },
   proceedButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 16 },

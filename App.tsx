@@ -25,6 +25,7 @@ export default function App() {
           headerTintColor: colors.onPrimary,
           headerTitleStyle: { fontWeight: '700' },
           contentStyle: { backgroundColor: colors.background },
+          headerShadowVisible: false,
         }}
       >
         <Stack.Screen name="Landing" component={LandingScreen} options={{ title: 'ShopHop' }} />
