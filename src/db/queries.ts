@@ -90,7 +90,19 @@ export function getToBuyById(id: number): ToBuyRow | null {
 export function createTrip(drafts: DraftItem[], toBuyIds: number[]): number {
   let tripId = 0;
   db.withTransactionSync(() => {
-    const name = `Trip ${new Date().toLocaleDateString()}`;
+    const storeNames: string[] = [];
+    for (const d of drafts) {
+      if (d.storeName && !storeNames.some((n) => n.toLowerCase() === d.storeName!.toLowerCase())) {
+        storeNames.push(d.storeName);
+      }
+    }
+    const name =
+      storeNames.length === 0
+        ? 'Trip'
+        : storeNames.length === 1
+      ? storeNames[0]
+    : `${storeNames[0]} + ${storeNames.length - 1} more`;
+
     tripId = db.runSync(
       `INSERT INTO trips (name, status) VALUES (?, 'shopping')`,
       [name]
@@ -251,13 +263,13 @@ export function getReviewItems(tripId: number): ReviewItem[] {
   );
 }
 
-export function getTripStatus(tripId: number): 'planning' | 'shopping' | 'completed' | null {
-  const row = db.getFirstSync<{ status: 'planning' | 'shopping' | 'completed' }>(
-    'SELECT status FROM trips WHERE id = ?',
-    [tripId]
-  );
-  return row?.status ?? null;
-}
+// export function getTripStatus(tripId: number): 'planning' | 'shopping' | 'completed' | null {
+//   const row = db.getFirstSync<{ status: 'planning' | 'shopping' | 'completed' }>(
+//     'SELECT status FROM trips WHERE id = ?',
+//     [tripId]
+//   );
+//   return row?.status ?? null;
+// }
 
 export function getInProgressTrips(): InProgressTrip[] {
   return db.getAllSync<InProgressTrip>(
@@ -327,6 +339,15 @@ export function getStorePendingItems(tripId: number): { store_id: number; name: 
     `SELECT store_id, name FROM items
      WHERE trip_id = ? AND store_id IS NOT NULL AND status = 'pending'
      ORDER BY id`,
+    [tripId]
+  );
+}
+
+export function getTrip(
+  tripId: number
+): { id: number; name: string; created_at: string; status: 'planning' | 'shopping' | 'completed' } | null {
+  return db.getFirstSync(
+    'SELECT id, name, created_at, status FROM trips WHERE id = ?',
     [tripId]
   );
 }
