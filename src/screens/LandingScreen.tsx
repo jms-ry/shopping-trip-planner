@@ -233,11 +233,12 @@ export default function LandingScreen({ navigation }: Props) {
   const sheetTitle = viewAll === 'progress' ? 'In progress' : viewAll === 'toBuy' ? 'To buy' : 'Saved journeys';
   const sheetCount = viewAll === 'progress' ? inProgress.length : viewAll === 'toBuy' ? toBuy.length : trips.length;
   
-  const toastView = (
+  const renderToast = (inHeader: boolean) => (
     <Animated.View
       pointerEvents="none"
       style={[
         styles.toast,
+        inHeader && styles.toastInHeader,
         toast.kind === 'destroy' && styles.toastDestroy,
         {
           opacity: toastAnim,
@@ -334,7 +335,7 @@ export default function LandingScreen({ navigation }: Props) {
         </View>
       </ScrollView>
 
-      {!viewAll && toastView}
+      {!viewAll && renderToast(false)}
 
       <Modal
         visible={viewAll !== null}
@@ -354,20 +355,19 @@ export default function LandingScreen({ navigation }: Props) {
                 <Ionicons name="close" size={24} color={colors.onPrimary} />
               </Pressable>
             </View>
-            <View style={styles.sheetBody}>
-              <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetListContent}>
-                {viewAll === 'progress' && renderInProgressList(inProgress)}
-                {viewAll === 'toBuy' && <View style={styles.card}>{renderToBuyRows(toBuy)}</View>}
-                {viewAll === 'journeys' && (
-                  <View style={styles.card}>{renderJourneyRows(trips)}</View>
-                )}
-              </ScrollView>
-              {toastView}
-            </View>
+            <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetListContent}>
+              {viewAll === 'progress' && renderInProgressList(inProgress)}
+              {viewAll === 'toBuy' && <View style={styles.card}>{renderToBuyRows(toBuy)}</View>}
+              {viewAll === 'journeys' && (
+                <View style={styles.card}>{renderJourneyRows(trips)}</View>
+              )}
+            </ScrollView>
 
             <Pressable style={styles.sheetDone} onPress={() => setViewAll(null)}>
               <Text style={styles.sheetDoneText}>Done</Text>
             </Pressable>
+
+            {renderToast(true)}
           </View>
 
         </View>
@@ -516,5 +516,5 @@ const styles = StyleSheet.create({
   },
   toastDestroy: { backgroundColor: colors.danger },
   toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
-  sheetBody: { flexShrink: 1 },
+  toastInHeader: { top: 8 },
 });
