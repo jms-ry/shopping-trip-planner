@@ -208,6 +208,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   return (
     <>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.spacerTop} />
         <View style={styles.storeCard}>
           <View style={styles.storeHeader}>
             <View style={styles.storeTitleWrap}>
@@ -309,6 +310,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             color={canFinish ? colors.onPrimary : colors.mutedOnDark}
           />
         </Pressable>
+        <View style={styles.spacerTop} />
       </ScrollView>
 
       {/* Mark modal */}
@@ -456,7 +458,9 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 48 },
+  container: { padding: 16, paddingBottom: 48, flexGrow: 1 },
+  spacerTop: { flex: 1 },
+  spacerBottom: { flex: 1.5 },
 
   // Store card
   storeCard: { backgroundColor: colors.surface, borderRadius: radius.lg },

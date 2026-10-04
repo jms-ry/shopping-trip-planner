@@ -323,7 +323,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
           </Text>
         </View>
       )}
-
+      <View style={styles.spacerTop} />
       <View style={[styles.deck, { height: PEEK * behind + CARD_HEIGHT }]}>
         {visible
           .map((store, depth) => ({ store, depth }))
@@ -341,12 +341,15 @@ export default function StorePickerScreen({ navigation, route }: Props) {
           <Text style={styles.hint}>Swipe the card, or tap a card behind it</Text>
         </>
       )}
+      <View style={styles.spacerBottom} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 48 },
+  container: { padding: 16, paddingBottom: 48, flexGrow: 1 },
+  spacerTop: { flex: 1 },
+  spacerBottom: { flex: 1.5 },
   title: { fontSize: 24, fontWeight: '800', color: colors.textOnDark },
   subtitle: { color: colors.mutedOnDark, marginTop: 4, marginBottom: 16 },
   anyNote: {
