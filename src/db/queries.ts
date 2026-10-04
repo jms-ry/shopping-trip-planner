@@ -321,3 +321,12 @@ export function endTripEarly(tripId: number) {
     db.runSync(`UPDATE trips SET status = 'completed' WHERE id = ?`, [tripId]);
   });
 }
+
+export function getStorePendingItems(tripId: number): { store_id: number; name: string }[] {
+  return db.getAllSync<{ store_id: number; name: string }>(
+    `SELECT store_id, name FROM items
+     WHERE trip_id = ? AND store_id IS NOT NULL AND status = 'pending'
+     ORDER BY id`,
+    [tripId]
+  );
+}
