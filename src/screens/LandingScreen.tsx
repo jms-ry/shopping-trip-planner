@@ -108,7 +108,7 @@ export default function LandingScreen({ navigation }: Props) {
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.hero}>
         <Text style={styles.heroTitle}>Hop between shops.{'\n'}Forget nothing.</Text>
-        <Pressable style={styles.heroButton} onPress={() => navigation.navigate('Plan')}>
+        <Pressable style={styles.heroButton} onPress={() => navigation.navigate('CartLoading')}>
           <Ionicons name="add" size={22} color={colors.primary} />
           <Text style={styles.heroButtonText}>New trip</Text>
         </Pressable>

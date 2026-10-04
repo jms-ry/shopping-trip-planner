@@ -8,14 +8,16 @@ export const colors = {
   surface: '#ffffff',
   border: '#d0d7de',
   muted: '#eceff1',
-  text: '#111111',        // must be dark: used inside white cards
-  textMuted: '#666666',   // must be dark: used inside white cards
-  textOnDark: '#ffffff',  // only for text directly on the dark page
-  mutedOnDark: '#9fb3bd', // only for text directly on the dark page
+  text: '#111111',        
+  textMuted: '#666666',   
+  textOnDark: '#ffffff',  
+  mutedOnDark: '#9fb3bd', 
   success: '#1a7f37',
   warning: '#bc4c00',
   neutral: '#6e7781',
   danger: '#d1242f',
+  field: '#f6f8fa',
+  amber: '#f5a623',
 };
 
 export const radius = { sm: 8, md: 12, lg: 16, xl: 28 };
