@@ -88,7 +88,7 @@ export default function PlanScreen({ navigation, route }: Props) {
 
   const proceed = () => {
     const tripId = createTrip(items, toBuyId !== undefined ? [toBuyId] : []);
-    navigation.replace('StorePicker', { tripId });
+    navigation.replace('TripLoading', { tripId });
   };
 
   // Newest first. `index` is the position in `items`, which removal needs.

@@ -10,6 +10,7 @@ import StoreShoppingScreen from './src/screens/StoreShoppingScreen';
 import ReviewScreen from './src/screens/ReviewScreen';
 import type { RootStackParamList } from './src/types/navigation';
 import CartLoadingScreen from './src/screens/CartLoadingScreen';
+import TripLoadingScreen from './src/screens/TripLoadingScreen';
 
 initDb();
 
@@ -35,6 +36,11 @@ export default function App() {
         <Stack.Screen name="StoreShopping" component={StoreShoppingScreen} options={{ title: 'Shopping' }} />
         <Stack.Screen name="Review" component={ReviewScreen} options={{ title: 'Review trip' }} />
         <Stack.Screen name="CartLoading" component={CartLoadingScreen} options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}/>
+        <Stack.Screen
+          name="TripLoading"
+          component={TripLoadingScreen}
+          options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

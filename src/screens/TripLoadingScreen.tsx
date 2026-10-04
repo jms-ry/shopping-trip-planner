@@ -4,18 +4,27 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../theme';
+import { getStoresForTrip } from '../db/queries';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CartLoading'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'TripLoading'>;
 
-const MESSAGES = ['Your cart is being made…', 'Polishing the wheels…', 'Ready to fill it up!'];
 const DURATION = 2000;
-const CART_SIZE = 34;
+const ICON_SIZE = 34;
 
-export default function CartLoadingScreen({ navigation, route }: Props) {
-  const toBuyId = route.params?.toBuyId;
+export default function TripLoadingScreen({ navigation, route }: Props) {
+  const { tripId } = route.params;
   const progress = useRef(new Animated.Value(0)).current;
   const [barWidth, setBarWidth] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
+  const [stores] = useState(() => getStoresForTrip(tripId));
+
+  const messages = [
+    'Sorting your items by store…',
+    'Planning your route…',
+    stores.length === 1
+      ? 'One stop. Let’s go!'
+      : `${stores.length} stops lined up. Let’s hop!`,
+  ];
 
   useEffect(() => {
     const timers = [
@@ -26,11 +35,16 @@ export default function CartLoadingScreen({ navigation, route }: Props) {
     const animation = Animated.timing(progress, {
       toValue: 1,
       duration: DURATION,
-      easing: Easing.inOut(Easing.ease),
+      easing: Easing.linear,
       useNativeDriver: false, // width can't use the native driver
     });
     animation.start(({ finished }) => {
-      if (finished) navigation.replace('Plan', { toBuyId });
+      if (!finished) return;
+      if (stores.length === 1 && stores[0].status === 'open') {
+        navigation.replace('StoreShopping', { tripId, storeId: stores[0].id });
+      } else {
+        navigation.replace('StorePicker', { tripId });
+      }
     });
 
     return () => {
@@ -40,9 +54,14 @@ export default function CartLoadingScreen({ navigation, route }: Props) {
   }, []);
 
   const fillWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-  const cartX = progress.interpolate({
+  const iconX = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, Math.max(0, barWidth - CART_SIZE)],
+    outputRange: [0, Math.max(0, barWidth - ICON_SIZE)],
+  });
+  // Four hops along the way.
+  const iconY = progress.interpolate({
+    inputRange: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1],
+    outputRange: [0, -12, 0, -12, 0, -12, 0, -12, 0],
   });
 
   return (
@@ -50,15 +69,17 @@ export default function CartLoadingScreen({ navigation, route }: Props) {
       <Text style={styles.brand}>ShopHop</Text>
 
       <View style={styles.barArea} onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}>
-        <Animated.View style={[styles.cart, { transform: [{ translateX: cartX }] }]}>
-          <Ionicons name="cart" size={CART_SIZE} color={colors.primary} />
+        <Animated.View
+          style={[styles.icon, { transform: [{ translateX: iconX }, { translateY: iconY }] }]}
+        >
+          <Ionicons name="storefront" size={ICON_SIZE} color={colors.primary} />
         </Animated.View>
         <View style={styles.track}>
           <Animated.View style={[styles.fill, { width: fillWidth }]} />
         </View>
       </View>
 
-      <Text style={styles.message}>{MESSAGES[messageIndex]}</Text>
+      <Text style={styles.message}>{messages[messageIndex]}</Text>
     </View>
   );
 }
@@ -77,8 +98,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 48,
   },
-  barArea: { width: '100%' },
-  cart: { marginBottom: 6 },
+  barArea: { width: '100%', paddingTop: 14 },
+  icon: { marginBottom: 6 },
   track: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
   fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
   message: { color: colors.textOnDark, textAlign: 'center', marginTop: 24, fontSize: 16 },

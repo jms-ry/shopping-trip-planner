@@ -173,7 +173,7 @@ export default function LandingScreen({ navigation }: Props) {
                 </View>
                 <Pressable
                   style={styles.addPill}
-                  onPress={() => navigation.navigate('Plan', { toBuyId: item.id })}
+                  onPress={() => navigation.navigate('CartLoading', { toBuyId: item.id })}
                 >
                   <Ionicons name="add" size={16} color={colors.onPrimary} />
                   <Text style={styles.addPillText}>Add to trip</Text>
