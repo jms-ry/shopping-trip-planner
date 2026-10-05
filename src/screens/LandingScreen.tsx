@@ -24,7 +24,7 @@ type ToastKind = 'success' | 'destroy';
 
 const PREVIEW_COUNT = 3;
 
-export default function LandingScreen({ navigation }: Props) {
+export default function LandingScreen({ navigation, route }: Props) {
   const [inProgress, setInProgress] = useState<InProgressTrip[]>([]);
   const [toBuy, setToBuy] = useState<ToBuyRow[]>([]);
   const [trips, setTrips] = useState<TripRow[]>([]);
@@ -51,6 +51,13 @@ export default function LandingScreen({ navigation }: Props) {
       Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
     }, 2000);
   };
+
+  useEffect(() => {
+    if (route.params?.saved) {
+      showToast('Trip saved to journeys', 'success');
+      navigation.setParams({ saved: undefined });
+    }
+  }, [route.params?.saved]);
   const load = () => {
     setInProgress(getInProgressTrips());
     setToBuy(getToBuy());

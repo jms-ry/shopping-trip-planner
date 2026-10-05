@@ -58,7 +58,7 @@ export default function ReviewScreen({ navigation, route }: Props) {
 
   const finish = () => {
     finishTrip(tripId);
-    navigation.popToTop();
+    navigation.replace('FinishLoading', { tripId });
   };
 
   const confirmFinish = () => {
