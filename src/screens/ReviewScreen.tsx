@@ -8,6 +8,7 @@ import ProgressBar from '../components/ProgressBar';
 import { finishTrip } from '../db';
 import { colors, radius } from '../theme';
 import { getReviewItems, getTrip, ItemStatus, ReviewItem } from '../db/queries';
+import { useLeaveToast } from '../lib/useLeaveToast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Review'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -37,6 +38,8 @@ const DashedLine = () => (
 
 export default function ReviewScreen({ navigation, route }: Props) {
   const { tripId } = route.params;
+  useLeaveToast(tripId);
+  
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [trip, setTrip] = useState<ReturnType<typeof getTrip>>(null);
   const [filter, setFilter] = useState<ItemStatus | null>(null);

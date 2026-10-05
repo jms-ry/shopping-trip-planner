@@ -21,6 +21,7 @@ import {
   reopenStore,
   StoreRow,
 } from '../db/queries';
+import { useLeaveToast } from '../lib/useLeaveToast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StorePicker'>;
 
@@ -42,7 +43,8 @@ export default function StorePickerScreen({ navigation, route }: Props) {
 
   const pan = useRef(new Animated.Value(0)).current;
   const deckSize = useRef(0);
-
+  
+  useLeaveToast(tripId);
   // Single open store: skip the picker. Runs on mount only.
   useEffect(() => {
     const rows = getStoresForTrip(tripId);

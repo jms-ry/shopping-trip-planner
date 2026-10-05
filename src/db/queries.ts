@@ -351,3 +351,22 @@ export function getTrip(
     [tripId]
   );
 }
+
+// A fingerprint of everything that can change while shopping.
+export function getTripSignature(tripId: number): string {
+  const items = db.getAllSync<{
+    id: number;
+    status: string;
+    store_id: number | null;
+    resolved_store_id: number | null;
+  }>(
+    `SELECT id, status, store_id, resolved_store_id
+     FROM items WHERE trip_id = ? ORDER BY id`,
+    [tripId]
+  );
+  const stores = db.getAllSync<{ id: number; status: string }>(
+    'SELECT id, status FROM stores WHERE trip_id = ? ORDER BY id',
+    [tripId]
+  );
+  return JSON.stringify([items, stores]);
+}

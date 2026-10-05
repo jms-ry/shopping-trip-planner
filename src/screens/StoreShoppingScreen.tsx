@@ -19,6 +19,7 @@ import {
   setItemStatus,
   ShopItem,
 } from '../db/queries';
+import { useLeaveToast } from '../lib/useLeaveToast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreShopping'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -43,6 +44,7 @@ const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
 
 export default function StoreShoppingScreen({ navigation, route }: Props) {
   const { tripId, storeId } = route.params;
+  useLeaveToast(tripId);
 
   const [items, setItems] = useState<ShopItem[]>([]);
   const [storeName, setStoreName] = useState('');

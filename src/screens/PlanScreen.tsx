@@ -16,6 +16,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { colors, radius } from '../theme';
 import { createTrip, DraftItem, getToBuyById } from '../db/queries';
+import { startTripSession } from '../lib/tripSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Plan'>;
 type ToastKind = 'added' | 'removed';
@@ -88,6 +89,7 @@ export default function PlanScreen({ navigation, route }: Props) {
 
   const proceed = () => {
     const tripId = createTrip(items, toBuyId !== undefined ? [toBuyId] : []);
+    startTripSession(tripId, true);
     navigation.replace('TripLoading', { tripId });
   };
 

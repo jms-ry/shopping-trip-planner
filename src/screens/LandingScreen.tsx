@@ -17,10 +17,12 @@ import {
   ToBuyRow,
   TripRow,
 } from '../db/queries';
+import { startTripSession } from '../lib/tripSession';
+import {takePendingToast} from '../lib/tripSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Landing'>;
 type ViewAllSection = 'progress' | 'toBuy' | 'journeys';
-type ToastKind = 'success' | 'destroy';
+type ToastKind = 'success' | 'destroy' | 'info';
 
 const PREVIEW_COUNT = 3;
 
@@ -67,6 +69,8 @@ export default function LandingScreen({ navigation, route }: Props) {
   useFocusEffect(
     useCallback(() => {
       load();
+      const pending = takePendingToast();
+      if (pending) showToast(pending.message, pending.kind);
     }, [])
   );
 
@@ -94,6 +98,7 @@ export default function LandingScreen({ navigation, route }: Props) {
 
   const resume = (trip: InProgressTrip) => {
     setViewAll(null);
+    startTripSession(trip.id, false);
     if (trip.open_stores === 0) {
       navigation.navigate('Review', { tripId: trip.id });
     } else {
@@ -247,6 +252,7 @@ export default function LandingScreen({ navigation, route }: Props) {
         styles.toast,
         inHeader && styles.toastInHeader,
         toast.kind === 'destroy' && styles.toastDestroy,
+        toast.kind === 'info' && styles.toastInfo,
         {
           opacity: toastAnim,
           transform: [
@@ -256,11 +262,17 @@ export default function LandingScreen({ navigation, route }: Props) {
       ]}
     >
       <Ionicons
-        name={toast.kind === 'destroy' ? 'trash' : 'checkmark-circle'}
+        name={
+          toast.kind === 'destroy'
+            ? 'trash'
+            : toast.kind === 'info'
+            ? 'information-circle'
+            : 'checkmark-circle'
+        }
         size={20}
         color={colors.textOnDark}
       />
-      <Text style={styles.toastText} numberOfLines={1}>
+      <Text style={styles.toastText} numberOfLines={2}>
         {toast.message}
       </Text>
     </Animated.View>
@@ -512,7 +524,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 16,
-    maxWidth: '80%',
+    maxWidth: '90%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -524,4 +536,5 @@ const styles = StyleSheet.create({
   toastDestroy: { backgroundColor: colors.danger },
   toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
   toastInHeader: { top: 8 },
+  toastInfo: { backgroundColor: colors.accent },
 });

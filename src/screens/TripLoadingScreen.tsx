@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { colors } from '../theme';
 import { getStoresForTrip } from '../db/queries';
+import { useLeaveToast } from '../lib/useLeaveToast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TripLoading'>;
 
@@ -13,6 +14,8 @@ const ICON_SIZE = 34;
 
 export default function TripLoadingScreen({ navigation, route }: Props) {
   const { tripId } = route.params;
+  useLeaveToast(tripId);
+
   const progress = useRef(new Animated.Value(0)).current;
   const [barWidth, setBarWidth] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
