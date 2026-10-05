@@ -9,12 +9,8 @@
     "ios": {
       "supportsTablet": true
     },
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0b1f2a"
-    },
     "android": {
+      "package": "com.james.shophop",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#56e2ec"
@@ -24,7 +20,21 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
-    ]
+      "expo-sqlite",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0b1f2a"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "295b5dd5-8c81-4df6-a581-44042770c7b1"
+      }
+    }
   }
 }
