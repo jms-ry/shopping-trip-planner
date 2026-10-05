@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Expo output
+.expo/
+dist/
+web-build/
+
+# Native build folders
+android/
+ios/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+
+# Operating system files
+.DS_Store
+Thumbs.db
