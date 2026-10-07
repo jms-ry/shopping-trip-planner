@@ -27,6 +27,8 @@ import {
 import { useLeaveToast } from '../lib/useLeaveToast';
 import { clearTripSession, queueToast } from '../lib/tripSession';
 import AddStoreDialog from '../components/AddStoreDialog';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SheetBottomInset from '../components/SheetBottomInset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreShopping'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -488,57 +490,61 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
         animationType="slide"
         onRequestClose={() => setMarkId(null)}
       >
-        <View style={styles.sheetBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setMarkId(null)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle} numberOfLines={1}>
-                {markItem?.name}
-              </Text>
-              <Pressable onPress={() => setMarkId(null)} hitSlop={8} accessibilityLabel="Close">
-                <Ionicons name="close" size={24} color={colors.onPrimary} />
-              </Pressable>
-            </View>
-
-            <View style={styles.markBody}>
-              {OPTIONS.map((opt) => {
-                const meta = STATUS_META[opt.status];
-                const selected = markItem?.status === opt.status;
-                return (
-                  <Pressable
-                    key={opt.status}
-                    style={[
-                      styles.markOption,
-                      { borderColor: meta.color },
-                      selected && { backgroundColor: meta.color },
-                    ]}
-                    onPress={() => markItem && mark(markItem, opt.status)}
-                  >
-                    <Ionicons
-                      name={meta.icon}
-                      size={24}
-                      color={selected ? colors.textOnDark : meta.color}
-                    />
-                    <Text
-                      style={[
-                        styles.markOptionText,
-                        { color: selected ? colors.textOnDark : meta.color },
-                      ]}
-                    >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-
-              {markItem && markItem.status !== 'pending' && (
-                <Pressable style={styles.sheetLink} onPress={() => clearMark(markItem)}>
-                  <Text style={styles.sheetLinkText}>Clear mark</Text>
+        <SafeAreaProvider>
+          <View style={styles.sheetBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setMarkId(null)} />
+            <View style={styles.sheet}>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle} numberOfLines={1}>
+                  {markItem?.name}
+                </Text>
+                <Pressable onPress={() => setMarkId(null)} hitSlop={8} accessibilityLabel="Close">
+                  <Ionicons name="close" size={24} color={colors.onPrimary} />
                 </Pressable>
-              )}
+              </View>
+
+              <View style={styles.markBody}>
+                {OPTIONS.map((opt) => {
+                  const meta = STATUS_META[opt.status];
+                  const selected = markItem?.status === opt.status;
+                  return (
+                    <Pressable
+                      key={opt.status}
+                      style={[
+                        styles.markOption,
+                        { borderColor: meta.color },
+                        selected && { backgroundColor: meta.color },
+                      ]}
+                      onPress={() => markItem && mark(markItem, opt.status)}
+                    >
+                      <Ionicons
+                        name={meta.icon}
+                        size={24}
+                        color={selected ? colors.textOnDark : meta.color}
+                      />
+                      <Text
+                        style={[
+                          styles.markOptionText,
+                          { color: selected ? colors.textOnDark : meta.color },
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+
+                {markItem && markItem.status !== 'pending' && (
+                  <Pressable style={styles.sheetLink} onPress={() => clearMark(markItem)}>
+                    <Text style={styles.sheetLinkText}>Clear mark</Text>
+                  </Pressable>
+                )}
+              </View>
+              <SheetBottomInset />
             </View>
           </View>
-        </View>
+        </SafeAreaProvider>
+        
       </Modal>
 
       {/* Add item modal */}

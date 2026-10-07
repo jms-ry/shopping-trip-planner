@@ -19,6 +19,8 @@ import {
 } from '../db/queries';
 import { startTripSession } from '../lib/tripSession';
 import {takePendingToast} from '../lib/tripSession';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SheetBottomInset from '../components/SheetBottomInset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Landing'>;
 type ViewAllSection = 'progress' | 'toBuy' | 'journeys';
@@ -362,34 +364,35 @@ export default function LandingScreen({ navigation, route }: Props) {
         animationType="slide"
         onRequestClose={() => setViewAll(null)}
       >
-        <View style={styles.sheetBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewAll(null)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{sheetTitle}</Text>
-              <View style={styles.sheetCount}>
-                <Text style={styles.sheetCountText}>{sheetCount}</Text>
+        <SafeAreaProvider>
+          <View style={styles.sheetBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setViewAll(null)} />
+            <View style={styles.sheet}>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>{sheetTitle}</Text>
+                <View style={styles.sheetCount}>
+                  <Text style={styles.sheetCountText}>{sheetCount}</Text>
+                </View>
+                <Pressable onPress={() => setViewAll(null)} hitSlop={8} accessibilityLabel="Close">
+                  <Ionicons name="close" size={24} color={colors.onPrimary} />
+                </Pressable>
               </View>
-              <Pressable onPress={() => setViewAll(null)} hitSlop={8} accessibilityLabel="Close">
-                <Ionicons name="close" size={24} color={colors.onPrimary} />
+              <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetListContent}>
+                {viewAll === 'progress' && renderInProgressList(inProgress)}
+                {viewAll === 'toBuy' && <View style={styles.card}>{renderToBuyRows(toBuy)}</View>}
+                {viewAll === 'journeys' && (
+                  <View style={styles.card}>{renderJourneyRows(trips)}</View>
+                )}
+              </ScrollView>
+
+              <Pressable style={styles.sheetDone} onPress={() => setViewAll(null)}>
+                <Text style={styles.sheetDoneText}>Done</Text>
               </Pressable>
+              <SheetBottomInset />
+              {renderToast(true)}
             </View>
-            <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetListContent}>
-              {viewAll === 'progress' && renderInProgressList(inProgress)}
-              {viewAll === 'toBuy' && <View style={styles.card}>{renderToBuyRows(toBuy)}</View>}
-              {viewAll === 'journeys' && (
-                <View style={styles.card}>{renderJourneyRows(trips)}</View>
-              )}
-            </ScrollView>
-
-            <Pressable style={styles.sheetDone} onPress={() => setViewAll(null)}>
-              <Text style={styles.sheetDoneText}>Done</Text>
-            </Pressable>
-
-            {renderToast(true)}
           </View>
-
-        </View>
+        </SafeAreaProvider>
       </Modal>
     </View>
   );
