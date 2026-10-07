@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,6 +26,7 @@ import {
 } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
 import { clearTripSession, queueToast } from '../lib/tripSession';
+import AddStoreDialog from '../components/AddStoreDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreShopping'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -68,6 +69,10 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   const [showLeftover, setShowLeftover] = useState(false);
   const [extraStore, setExtraStore] = useState('');
 
+  const [showAddStore, setShowAddStore] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastAnim = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const load = () => {
     setItems(getItemsForStore(tripId, storeId));
     const store = getStoreById(storeId);
@@ -80,6 +85,22 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     }, [tripId, storeId])
   );
 
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastAnim.stopAnimation();
+    Animated.timing(toastAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    toastTimer.current = setTimeout(() => {
+      Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+    }, 2500);
+  };
+  
   // ---- Derived data ----
   const pages: ShopItem[][] = [];
   for (let i = 0; i < items.length; i += PAGE_SIZE) pages.push(items.slice(i, i + PAGE_SIZE));
@@ -330,7 +351,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   };
 
   return (
-    <>
+    <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.spacerTop} />
         <View style={styles.storeCard}>
@@ -434,8 +455,31 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             color={canFinish ? colors.onPrimary : colors.mutedOnDark}
           />
         </Pressable>
+
+        <Pressable style={styles.addStoreLink} onPress={() => setShowAddStore(true)}>
+          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Text style={styles.addStoreLinkText}>Add another store</Text>
+        </Pressable>
         <View style={styles.spacerTop} />
       </ScrollView>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.toast,
+          {
+            opacity: toastAnim,
+            transform: [
+              { translateX: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
+            ],
+          },
+        ]}
+      >
+        <Ionicons name="checkmark-circle" size={20} color={colors.textOnDark} />
+        <Text style={styles.toastText} numberOfLines={2}>
+          {toastMessage}
+        </Text>
+      </Animated.View>
 
       {/* Mark modal */}
       <Modal
@@ -572,7 +616,17 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
           </View>
         </View>
       </Modal>
-    </>
+      <AddStoreDialog
+        visible={showAddStore}
+        tripId={tripId}
+        onClose={() => setShowAddStore(false)}
+        onAdded={(result, name) => {
+          setShowAddStore(false);
+          showToast(result.storeId === storeId ? `Items added to ${name}` : `${name} added to your trip`);
+          load();
+        }}
+      />
+    </View>
   );
 }
 
@@ -767,4 +821,28 @@ const styles = StyleSheet.create({
   modalCancelText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
   trashButton: { padding: 2 },
   footerHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  addStoreLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  addStoreLinkText: { color: colors.primary, fontWeight: '700' },
+  root: { flex: 1 },
+  toast: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    maxWidth: '90%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.success,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radius.md,
+  },
+  toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
 });

@@ -9,6 +9,7 @@ import { finishTrip } from '../db';
 import { colors, radius } from '../theme';
 import { getReviewItems, getTrip, ItemStatus, ReviewItem } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
+import AddStoreDialog from '../components/AddStoreDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Review'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -44,6 +45,7 @@ export default function ReviewScreen({ navigation, route }: Props) {
   const [trip, setTrip] = useState<ReturnType<typeof getTrip>>(null);
   const [filter, setFilter] = useState<ItemStatus | null>(null);
   const [receiptWidth, setReceiptWidth] = useState(0);
+  const [showAddStore, setShowAddStore] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -102,126 +104,145 @@ export default function ReviewScreen({ navigation, route }: Props) {
   const tearCount = receiptWidth > 0 ? Math.ceil(receiptWidth / TEAR) + 1 : 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.receipt} onLayout={(e) => setReceiptWidth(e.nativeEvent.layout.width)}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.tripName} numberOfLines={2}>
-              {trip?.name ?? ''}
-            </Text>
-            <Text style={styles.date}>{trip ? formatDate(trip.created_at) : ''}</Text>
+    <>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.receipt} onLayout={(e) => setReceiptWidth(e.nativeEvent.layout.width)}>
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <Text style={styles.tripName} numberOfLines={2}>
+                {trip?.name ?? ''}
+              </Text>
+              <Text style={styles.date}>{trip ? formatDate(trip.created_at) : ''}</Text>
+            </View>
+            <View style={[styles.badge, completed ? styles.badgeSaved : styles.badgeReview]}>
+              <Text style={[styles.badgeText, completed && { color: colors.textOnDark }]}>
+                {completed ? 'Saved' : 'Review'}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.badge, completed ? styles.badgeSaved : styles.badgeReview]}>
-            <Text style={[styles.badgeText, completed && { color: colors.textOnDark }]}>
-              {completed ? 'Saved' : 'Review'}
+
+          <DashedLine />
+
+          <View style={styles.summary}>
+            <Text style={styles.summaryText}>
+              {boughtCount} of {total} bought
             </Text>
+            <ProgressBar value={boughtCount} total={total} color={colors.success} />
           </View>
-        </View>
 
-        <DashedLine />
+          <View style={styles.tiles}>
+            {tiles.map((s) => {
+              const selected = filter === s.status;
+              return (
+                <Pressable
+                  key={s.status}
+                  style={[
+                    styles.tile,
+                    selected && { borderColor: s.color, backgroundColor: colors.surface },
+                  ]}
+                  onPress={() => setFilter(selected ? null : s.status)}
+                >
+                  <Ionicons name={s.icon} size={20} color={s.color} />
+                  <Text style={[styles.tileCount, { color: s.color }]}>{count(s.status)}</Text>
+                  <Text style={styles.tileLabel}>{s.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.tileCaption}>Tap a count to filter the list</Text>
 
-        <View style={styles.summary}>
-          <Text style={styles.summaryText}>
-            {boughtCount} of {total} bought
-          </Text>
-          <ProgressBar value={boughtCount} total={total} color={colors.success} />
-        </View>
+          <DashedLine />
 
-        <View style={styles.tiles}>
-          {tiles.map((s) => {
-            const selected = filter === s.status;
+          {SECTIONS.filter((s) => !filter || s.status === filter).map((section) => {
+            const rows = items.filter((i) => i.status === section.status);
+            if (rows.length === 0) return null;
             return (
-              <Pressable
-                key={s.status}
-                style={[
-                  styles.tile,
-                  selected && { borderColor: s.color, backgroundColor: colors.surface },
-                ]}
-                onPress={() => setFilter(selected ? null : s.status)}
-              >
-                <Ionicons name={s.icon} size={20} color={s.color} />
-                <Text style={[styles.tileCount, { color: s.color }]}>{count(s.status)}</Text>
-                <Text style={styles.tileLabel}>{s.label}</Text>
-              </Pressable>
+              <View key={section.status} style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name={section.icon} size={18} color={section.color} />
+                  <Text style={[styles.sectionTitle, { color: section.color }]}>{section.label}</Text>
+                  <Text style={styles.sectionCount}>{rows.length}</Text>
+                </View>
+                {rows.map((item, index) => (
+                  <View key={item.id} style={[styles.itemRow, index > 0 && styles.rowDivider]}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <View style={styles.storeTag}>
+                      <Ionicons
+                        name={item.store_name ? 'storefront-outline' : 'shuffle'}
+                        size={13}
+                        color={colors.textMuted}
+                      />
+                      <Text style={styles.storeTagText}>{metaFor(item)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
             );
           })}
+
+          <DashedLine />
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total items</Text>
+            <Text style={styles.totalValue}>{total}</Text>
+          </View>
         </View>
-        <Text style={styles.tileCaption}>Tap a count to filter the list</Text>
 
-        <DashedLine />
+        {/* Torn edge */}
+        <View style={[styles.tearRow, { width: receiptWidth }]}>
+          {Array.from({ length: tearCount }).map((_, i) => (
+            <View key={i} style={styles.tearTooth} />
+          ))}
+        </View>
 
-        {SECTIONS.filter((s) => !filter || s.status === filter).map((section) => {
-          const rows = items.filter((i) => i.status === section.status);
-          if (rows.length === 0) return null;
-          return (
-            <View key={section.status} style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name={section.icon} size={18} color={section.color} />
-                <Text style={[styles.sectionTitle, { color: section.color }]}>{section.label}</Text>
-                <Text style={styles.sectionCount}>{rows.length}</Text>
-              </View>
-              {rows.map((item, index) => (
-                <View key={item.id} style={[styles.itemRow, index > 0 && styles.rowDivider]}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <View style={styles.storeTag}>
-                    <Ionicons
-                      name={item.store_name ? 'storefront-outline' : 'shuffle'}
-                      size={13}
-                      color={colors.textMuted}
-                    />
-                    <Text style={styles.storeTagText}>{metaFor(item)}</Text>
-                  </View>
-                </View>
-              ))}
+        {!completed && (
+          <View style={styles.actions}>
+            {pendingCount > 0 && (
+              <Text style={styles.hint}>
+                {pendingCount} item{pendingCount === 1 ? ' is' : 's are'} still unmarked. Go back to
+                the stores to mark them.
+              </Text>
+            )}
+            <Pressable
+              style={[styles.finishButton, pendingCount > 0 && styles.finishDisabled]}
+              onPress={confirmFinish}
+              disabled={pendingCount > 0}
+            >
+              <Ionicons
+                name="checkmark-done"
+                size={20}
+                color={pendingCount > 0 ? colors.mutedOnDark : colors.onPrimary}
+              />
+              <Text style={[styles.finishText, pendingCount > 0 && styles.finishTextDisabled]}>
+                Finish trip
+              </Text>
+            </Pressable>
+            <View style={styles.secondaryRow}>
+              <Pressable
+                style={[styles.secondaryButton, styles.flex1]}
+                onPress={() => navigation.replace('StorePicker', { tripId })}
+              >
+                <Text style={styles.secondaryText}>Reopen a store</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.secondaryButton, styles.flex1]}
+                onPress={() => setShowAddStore(true)}
+              >
+                <Text style={styles.secondaryText}>Add a store</Text>
+              </Pressable>
             </View>
-          );
-        })}
-
-        <DashedLine />
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total items</Text>
-          <Text style={styles.totalValue}>{total}</Text>
-        </View>
-      </View>
-
-      {/* Torn edge */}
-      <View style={[styles.tearRow, { width: receiptWidth }]}>
-        {Array.from({ length: tearCount }).map((_, i) => (
-          <View key={i} style={styles.tearTooth} />
-        ))}
-      </View>
-
-      {!completed && (
-        <View style={styles.actions}>
-          {pendingCount > 0 && (
-            <Text style={styles.hint}>
-              {pendingCount} item{pendingCount === 1 ? ' is' : 's are'} still unmarked. Go back to
-              the stores to mark them.
-            </Text>
-          )}
-          <Pressable
-            style={[styles.finishButton, pendingCount > 0 && styles.finishDisabled]}
-            onPress={confirmFinish}
-            disabled={pendingCount > 0}
-          >
-            <Ionicons
-              name="checkmark-done"
-              size={20}
-              color={pendingCount > 0 ? colors.mutedOnDark : colors.onPrimary}
-            />
-            <Text style={[styles.finishText, pendingCount > 0 && styles.finishTextDisabled]}>
-              Finish trip
-            </Text>
-          </Pressable>
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() => navigation.replace('StorePicker', { tripId })}
-          >
-            <Text style={styles.secondaryText}>Reopen a store</Text>
-          </Pressable>
-        </View>
-      )}
-    </ScrollView>
+          </View>
+        )}
+      </ScrollView>
+      <AddStoreDialog
+        visible={showAddStore}
+        tripId={tripId}
+        onClose={() => setShowAddStore(false)}
+        onAdded={() => {
+          setShowAddStore(false);
+          navigation.replace('StorePicker', { tripId });
+        }}
+      />
+    </>
   );
 }
 
@@ -316,4 +337,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  secondaryRow: { flexDirection: 'row', gap: 12 },
+  flex1: { flex: 1 },
 });

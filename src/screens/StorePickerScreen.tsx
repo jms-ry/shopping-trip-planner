@@ -16,6 +16,7 @@ import type { RootStackParamList } from '../types/navigation';
 import { colors, radius } from '../theme';
 import { getPendingAnyStoreCount, getStoresForTrip, reopenStore, StoreRow } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
+import AddStoreDialog from '../components/AddStoreDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StorePicker'>;
 
@@ -37,6 +38,8 @@ export default function StorePickerScreen({ navigation, route }: Props) {
 
   const pan = useRef(new Animated.Value(0)).current;
   const deckSize = useRef(0);
+
+  const [showAddStore, setShowAddStore] = useState(false);
 
   // Single open store: skip the picker. Runs on mount only.
   useEffect(() => {
@@ -277,55 +280,71 @@ export default function StorePickerScreen({ navigation, route }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
-        {openCount === 0 ? 'All stores done' : anyDone ? 'Where to next?' : 'Where to start?'}
-      </Text>
-      <Text style={styles.subtitle}>
-        {openCount === 0
-          ? 'Reopen a store to make changes.'
-          : `${openCount} of ${stores.length} store${stores.length === 1 ? '' : 's'} left`}
-      </Text>
+    <>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>
+          {openCount === 0 ? 'All stores done' : anyDone ? 'Where to next?' : 'Where to start?'}
+        </Text>
+        <Text style={styles.subtitle}>
+          {openCount === 0
+            ? 'Reopen a store to make changes.'
+            : `${openCount} of ${stores.length} store${stores.length === 1 ? '' : 's'} left`}
+        </Text>
 
-      {anyPending > 0 && (
-        <View style={styles.anyNote}>
-          <Ionicons name="shuffle" size={16} color={colors.primary} />
-          <Text style={styles.anyNoteText}>
-            {anyPending} any-store item{anyPending === 1 ? '' : 's'} will follow you from stop to
-            stop
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.spacerTop} />
-
-      <View style={[styles.deck, { height: PEEK * behind + CARD_HEIGHT }]}>
-        {visible
-          .map((store, depth) => ({ store, depth }))
-          .reverse() // deepest first, so the front card is drawn last
-          .map(({ store, depth }) => renderCard(store, depth))}
-      </View>
-
-      {deck.length > 1 && (
-        <>
-          <View style={styles.dots}>
-            {stores.map((s) => (
-              <View key={s.id} style={[styles.dot, s.id === deck[0]?.id && styles.dotActive]} />
-            ))}
+        {anyPending > 0 && (
+          <View style={styles.anyNote}>
+            <Ionicons name="shuffle" size={16} color={colors.primary} />
+            <Text style={styles.anyNoteText}>
+              {anyPending} any-store item{anyPending === 1 ? '' : 's'} will follow you from stop to
+              stop
+            </Text>
           </View>
-          <Text style={styles.hint}>Swipe the card, or tap a card behind it</Text>
-        </>
-      )}
-      {openCount === 0 && (
-        <Pressable
-          style={styles.reviewButton}
-          onPress={() => navigation.replace('Review', { tripId })}
-        >
-          <Text style={styles.reviewButtonText}>Back to review</Text>
+        )}
+
+        <View style={styles.spacerTop} />
+
+        <View style={[styles.deck, { height: PEEK * behind + CARD_HEIGHT }]}>
+          {visible
+            .map((store, depth) => ({ store, depth }))
+            .reverse() // deepest first, so the front card is drawn last
+            .map(({ store, depth }) => renderCard(store, depth))}
+        </View>
+
+        {deck.length > 1 && (
+          <>
+            <View style={styles.dots}>
+              {stores.map((s) => (
+                <View key={s.id} style={[styles.dot, s.id === deck[0]?.id && styles.dotActive]} />
+              ))}
+            </View>
+            <Text style={styles.hint}>Swipe the card, or tap a card behind it</Text>
+          </>
+        )}
+        {openCount === 0 && (
+          <Pressable
+            style={styles.reviewButton}
+            onPress={() => navigation.replace('Review', { tripId })}
+          >
+            <Text style={styles.reviewButtonText}>Back to review</Text>
+          </Pressable>
+        )}
+        <Pressable style={styles.addStoreButton} onPress={() => setShowAddStore(true)}>
+          <Ionicons name="add" size={20} color={colors.primary} />
+          <Text style={styles.addStoreText}>Add a store</Text>
         </Pressable>
-      )}
-      <View style={styles.spacerBottom} />
-    </ScrollView>
+        <View style={styles.spacerBottom} />
+      </ScrollView>
+      <AddStoreDialog
+        visible={showAddStore}
+        tripId={tripId}
+        onClose={() => setShowAddStore(false)}
+        onAdded={(result) => {
+          setShowAddStore(false);
+          load();
+          bringToFront(result.storeId);
+        }}
+      />
+    </>
   );
 }
 
@@ -474,4 +493,17 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  addStoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    padding: 14,
+    marginTop: 20,
+  },
+  addStoreText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
 });

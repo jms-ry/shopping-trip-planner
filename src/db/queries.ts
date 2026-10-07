@@ -258,12 +258,7 @@ export function removeItem(tripId: number, storeId: number, itemId: number): Rem
 
     if ((others?.n ?? 0) > 0) {
       db.runSync('DELETE FROM stores WHERE id = ?', [storeId]);
-      const rest = db.getAllSync<{ name: string }>(
-        'SELECT name FROM stores WHERE trip_id = ? ORDER BY id',
-        [tripId]
-      );
-      const name = rest.length === 1 ? rest[0].name : `${rest[0].name} + ${rest.length - 1} more`;
-      db.runSync('UPDATE trips SET name = ? WHERE id = ?', [name, tripId]);
+      renameTripFromStores(tripId);
       result = 'store';
     } else {
       // Only pending any-store items can remain here.
@@ -306,10 +301,12 @@ export function addOrReopenStore(tripId: number, name: string): number {
     db.runSync(`UPDATE stores SET status = 'open' WHERE id = ?`, [existing.id]);
     return existing.id;
   }
-  return db.runSync(
+  const id = db.runSync(
     'INSERT INTO stores (trip_id, name) VALUES (?, ?)',
     [tripId, name]
   ).lastInsertRowId;
+  renameTripFromStores(tripId);
+  return id;
 }
 
 // Unmarked any-store items become no_stock so finishTrip sends them to To buy.
@@ -475,4 +472,59 @@ export function carryNoStockForward(itemIds: number[]) {
       );
     }
   });
+}
+
+// Names the trip after its first store, e.g. "Palengke + 2 more".
+function renameTripFromStores(tripId: number) {
+  const rows = db.getAllSync<{ name: string }>(
+    'SELECT name FROM stores WHERE trip_id = ? ORDER BY id',
+    [tripId]
+  );
+  if (rows.length === 0) return;
+  const name = rows.length === 1 ? rows[0].name : `${rows[0].name} + ${rows.length - 1} more`;
+  db.runSync('UPDATE trips SET name = ? WHERE id = ?', [name, tripId]);
+}
+
+export type AddStoreResult = { storeId: number; created: boolean; reopened: boolean };
+
+// Adds a store (or reuses one with the same name) and puts the items in it, as pending.
+export function addStoreWithItems(
+  tripId: number,
+  storeName: string,
+  itemNames: string[]
+): AddStoreResult {
+  let result: AddStoreResult = { storeId: 0, created: false, reopened: false };
+
+  db.withTransactionSync(() => {
+    const existing = db.getFirstSync<{ id: number; status: 'open' | 'done' }>(
+      'SELECT id, status FROM stores WHERE trip_id = ? AND LOWER(name) = LOWER(?)',
+      [tripId, storeName]
+    );
+
+    let storeId: number;
+    if (existing) {
+      storeId = existing.id;
+      if (existing.status === 'done') {
+        db.runSync(`UPDATE stores SET status = 'open' WHERE id = ?`, [storeId]);
+      }
+      result = { storeId, created: false, reopened: existing.status === 'done' };
+    } else {
+      storeId = db.runSync(
+        'INSERT INTO stores (trip_id, name) VALUES (?, ?)',
+        [tripId, storeName]
+      ).lastInsertRowId;
+      renameTripFromStores(tripId);
+      result = { storeId, created: true, reopened: false };
+    }
+
+    for (const name of itemNames) {
+      db.runSync('INSERT INTO items (trip_id, name, store_id) VALUES (?, ?, ?)', [
+        tripId,
+        name,
+        storeId,
+      ]);
+    }
+  });
+
+  return result;
 }
