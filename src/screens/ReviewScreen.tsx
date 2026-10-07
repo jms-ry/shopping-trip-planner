@@ -217,7 +217,7 @@ export default function ReviewScreen({ navigation, route }: Props) {
             style={styles.secondaryButton}
             onPress={() => navigation.replace('StorePicker', { tripId })}
           >
-            <Text style={styles.secondaryText}>Back to stores</Text>
+            <Text style={styles.secondaryText}>Reopen a store</Text>
           </Pressable>
         </View>
       )}

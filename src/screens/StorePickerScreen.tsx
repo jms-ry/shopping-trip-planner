@@ -278,9 +278,13 @@ export default function StorePickerScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{anyDone ? 'Where to next?' : 'Where to start?'}</Text>
+      <Text style={styles.title}>
+        {openCount === 0 ? 'All stores done' : anyDone ? 'Where to next?' : 'Where to start?'}
+      </Text>
       <Text style={styles.subtitle}>
-        {openCount} of {stores.length} store{stores.length === 1 ? '' : 's'} left
+        {openCount === 0
+          ? 'Reopen a store to make changes.'
+          : `${openCount} of ${stores.length} store${stores.length === 1 ? '' : 's'} left`}
       </Text>
 
       {anyPending > 0 && (
@@ -312,7 +316,14 @@ export default function StorePickerScreen({ navigation, route }: Props) {
           <Text style={styles.hint}>Swipe the card, or tap a card behind it</Text>
         </>
       )}
-
+      {openCount === 0 && (
+        <Pressable
+          style={styles.reviewButton}
+          onPress={() => navigation.replace('Review', { tripId })}
+        >
+          <Text style={styles.reviewButtonText}>Back to review</Text>
+        </Pressable>
+      )}
       <View style={styles.spacerBottom} />
     </ScrollView>
   );
@@ -454,4 +465,13 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)' },
   dotActive: { width: 20, backgroundColor: colors.primary },
   hint: { color: colors.mutedOnDark, textAlign: 'center', fontSize: 12, marginTop: 8 },
+  reviewButton: {
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    padding: 14,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
 });
