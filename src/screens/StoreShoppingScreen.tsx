@@ -9,7 +9,9 @@ import { colors, radius } from '../theme';
 import {
   addOrReopenStore,
   addUnplannedItem,
-  deleteItem,
+  getOtherStoreCount,
+  getTrip,
+  removeItem,
   getItemsForStore,
   getOtherOpenStoreCount,
   getStoreById,
@@ -23,6 +25,7 @@ import {
   carryNoStockForward,
 } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
+import { clearTripSession, queueToast } from '../lib/tripSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreShopping'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -43,6 +46,7 @@ const OPTIONS: { status: Exclude<ItemStatus, 'pending'>; label: string }[] = [
 ];
 
 const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
+const isAnchored = (i: ShopItem) => !(i.store_id === null && i.status === 'pending');
 
 export default function StoreShoppingScreen({ navigation, route }: Props) {
   const { tripId, storeId } = route.params;
@@ -117,18 +121,54 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   };
 
   const confirmRemove = (item: ShopItem) => {
-    const extra = item.store_id === null ? " It won't show at your next stops either." : '';
-    Alert.alert('Remove item', `Remove "${item.name}" from this trip?${extra}`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => {
-          deleteItem(item.id);
-          load();
-        },
-      },
+    const leavesStoreEmpty =
+      isAnchored(item) && items.filter((i) => i.id !== item.id && isAnchored(i)).length === 0;
+    const lastStore = getOtherStoreCount(tripId, storeId) === 0;
+    const otherAny = items.filter((i) => i.id !== item.id && !isAnchored(i)).length;
+
+    let title = 'Remove item';
+    let message = `Remove "${item.name}" from this trip?`;
+    let action = 'Remove';
+
+    if (leavesStoreEmpty && lastStore) {
+      title = 'Cancel trip?';
+      message =
+        `"${item.name}" is the last item in this trip. Removing it cancels the trip.` +
+        (otherAny > 0
+          ? ` Your ${otherAny} any-store item${otherAny === 1 ? '' : 's'} will go to To buy.`
+          : '');
+      action = 'Remove and cancel trip';
+    } else if (leavesStoreEmpty) {
+      message = `"${item.name}" is the last item for ${storeName}. ${storeName} will be removed from this trip too.`;
+      action = 'Remove item and store';
+    } else if (item.store_id === null) {
+      message += " It won't show at your next stops either.";
+    }
+
+    Alert.alert(title, message, [
+      { text: 'Keep', style: 'cancel' },
+      { text: action, style: 'destructive', onPress: () => removeConfirmed(item) },
     ]);
+  };
+
+  const removeConfirmed = (item: ShopItem) => {
+    const tripName = getTrip(tripId)?.name ?? '';
+    const result = removeItem(tripId, storeId, item.id);
+
+    if (result === 'item') {
+      load();
+    } else if (result === 'store') {
+      // This store no longer exists: leave its screen.
+      if (getOtherOpenStoreCount(tripId, storeId) > 0) {
+        goToPickerOrBack();
+      } else {
+        navigation.replace('Review', { tripId });
+      }
+    } else {
+      clearTripSession();
+      queueToast({ message: `Trip "${tripName}" aborted`, kind: 'destroy' });
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+    }
   };
 
   // ---- Unplanned items ----

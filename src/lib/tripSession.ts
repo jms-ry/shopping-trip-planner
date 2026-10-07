@@ -32,3 +32,12 @@ export function takePendingToast(): ToastRequest | null {
   pendingToast = null;
   return toast;
 }
+
+// Lets any screen leave a toast for Landing to show.
+export function queueToast(toast: ToastRequest) {
+  pendingToast = toast;
+}
+
+export function clearTripSession() {
+  session = null;
+}

@@ -217,8 +217,70 @@ export function addUnplannedItem(tripId: number, storeId: number, name: string) 
   );
 }
 
-export function deleteItem(itemId: number) {
-  db.runSync('DELETE FROM items WHERE id = ?', [itemId]);
+export function getOtherStoreCount(tripId: number, storeId: number): number {
+  const row = db.getFirstSync<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM stores WHERE trip_id = ? AND id != ?',
+    [tripId, storeId]
+  );
+  return row?.n ?? 0;
+}
+
+export type RemoveResult = 'item' | 'store' | 'trip';
+
+// Deletes an item. If that leaves its store with nothing, the store goes too.
+// If no stores are left, the trip is dropped and unbought items return to To buy.
+export function removeItem(tripId: number, storeId: number, itemId: number): RemoveResult {
+  let result: RemoveResult = 'item';
+
+  db.withTransactionSync(() => {
+    const item = db.getFirstSync<{ store_id: number | null; resolved_store_id: number | null }>(
+      'SELECT store_id, resolved_store_id FROM items WHERE id = ?',
+      [itemId]
+    );
+    db.runSync('DELETE FROM items WHERE id = ?', [itemId]);
+
+    // Only an item that belonged to this store can leave it empty.
+    const belonged =
+      item !== null && (item.store_id === storeId || item.resolved_store_id === storeId);
+    if (!belonged) return;
+
+    const left = db.getFirstSync<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM items
+       WHERE trip_id = ? AND (store_id = ? OR resolved_store_id = ?)`,
+      [tripId, storeId, storeId]
+    );
+    if ((left?.n ?? 0) > 0) return;
+
+    const others = db.getFirstSync<{ n: number }>(
+      'SELECT COUNT(*) AS n FROM stores WHERE trip_id = ? AND id != ?',
+      [tripId, storeId]
+    );
+
+    if ((others?.n ?? 0) > 0) {
+      db.runSync('DELETE FROM stores WHERE id = ?', [storeId]);
+      const rest = db.getAllSync<{ name: string }>(
+        'SELECT name FROM stores WHERE trip_id = ? ORDER BY id',
+        [tripId]
+      );
+      const name = rest.length === 1 ? rest[0].name : `${rest[0].name} + ${rest.length - 1} more`;
+      db.runSync('UPDATE trips SET name = ? WHERE id = ?', [name, tripId]);
+      result = 'store';
+    } else {
+      // Only pending any-store items can remain here.
+      db.runSync(
+        `INSERT INTO to_buy (name, store_name, from_trip_id)
+         SELECT name, NULL, trip_id FROM items
+         WHERE trip_id = ? AND status IN ('pending', 'no_stock')`,
+        [tripId]
+      );
+      db.runSync('DELETE FROM items WHERE trip_id = ?', [tripId]);
+      db.runSync('DELETE FROM stores WHERE trip_id = ?', [tripId]);
+      db.runSync('DELETE FROM trips WHERE id = ?', [tripId]);
+      result = 'trip';
+    }
+  });
+
+  return result;
 }
 
 export function markStoreDone(storeId: number) {
