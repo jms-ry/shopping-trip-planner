@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,7 +9,7 @@ import { colors, radius } from '../theme';
 import {
   addOrReopenStore,
   addUnplannedItem,
-  deleteUnplannedItem,
+  deleteItem,
   getItemsForStore,
   getOtherOpenStoreCount,
   getStoreById,
@@ -18,6 +18,9 @@ import {
   moveLeftoversToNoStock,
   setItemStatus,
   ShopItem,
+  findMatchingItem,
+  markBoughtHere,
+  carryNoStockForward,
 } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
 
@@ -37,7 +40,6 @@ const STATUS_META: Record<ItemStatus, { label: string; color: string; icon: Icon
 const OPTIONS: { status: Exclude<ItemStatus, 'pending'>; label: string }[] = [
   { status: 'bought', label: 'Bought' },
   { status: 'no_stock', label: 'No stock' },
-  { status: 'skipped', label: 'Skip' },
 ];
 
 const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
@@ -114,10 +116,19 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     load();
   };
 
-  const removeUnplanned = (item: ShopItem) => {
-    deleteUnplannedItem(item.id);
-    setMarkId(null);
-    load();
+  const confirmRemove = (item: ShopItem) => {
+    const extra = item.store_id === null ? " It won't show at your next stops either." : '';
+    Alert.alert('Remove item', `Remove "${item.name}" from this trip?${extra}`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          deleteItem(item.id);
+          load();
+        },
+      },
+    ]);
   };
 
   // ---- Unplanned items ----
@@ -127,14 +138,47 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     setLastAdded(null);
   };
 
+  const saveUnplanned = (name: string) => {
+    addUnplannedItem(tripId, storeId, name);
+    setNewItem('');
+    setLastAdded(`${name} added`);
+    goToPage(Math.floor(items.length / PAGE_SIZE)); // page that will hold the new item
+    load();
+  };
+
+  const resolveExisting = (itemId: number, name: string) => {
+    markBoughtHere(itemId, storeId);
+    setNewItem('');
+    setLastAdded(`${name} marked as bought`);
+    load();
+  };
+
   const addUnplanned = () => {
     const name = clean(newItem);
     if (!name) return;
-    addUnplannedItem(tripId, storeId, name);
-    setNewItem('');
-    setLastAdded(name);
-    goToPage(Math.floor(items.length / PAGE_SIZE)); // page that will hold the new item
-    load();
+
+    const match = findMatchingItem(tripId, name);
+    if (!match) {
+      saveUnplanned(name);
+      return;
+    }
+
+    const where =
+      match.status === 'no_stock'
+        ? `was marked No stock${match.store_name ? ` at ${match.store_name}` : ''}`
+        : match.store_name
+        ? `is still planned for ${match.store_name}`
+        : 'is still on your list as an any-store item';
+
+    Alert.alert(
+      'Already in this trip',
+      `"${name}" ${where}. Mark it as bought here instead of adding a new item?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Add as new', onPress: () => saveUnplanned(name) },
+        { text: 'Mark as bought', onPress: () => resolveExisting(match.id, name) },
+      ]
+    );
   };
 
   // ---- Finishing the store ----
@@ -149,15 +193,46 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   };
 
   const finishStore = () => {
+    // Planned items marked No stock here (unplanned items can't be out of stock).
+    const noStock = items.filter((i) => i.status === 'no_stock' && i.is_unplanned === 0);
+
     if (getOtherOpenStoreCount(tripId, storeId) > 0) {
-      markStoreDone(storeId);
-      goToPickerOrBack();
+      if (noStock.length > 0) {
+        askToCarry(noStock);
+      } else {
+        markStoreDone(storeId);
+        goToPickerOrBack();
+      }
     } else if (leftoverAny.length > 0) {
       setShowLeftover(true); // last store, but any-store items remain
     } else {
       markStoreDone(storeId);
       navigation.replace('Review', { tripId });
     }
+  };
+
+  const askToCarry = (noStock: ShopItem[]) => {
+    const names =
+      noStock.length > 3
+        ? `${noStock.slice(0, 3).map((i) => i.name).join(', ')} and ${noStock.length - 3} more`
+        : noStock.map((i) => i.name).join(', ');
+    const one = noStock.length === 1;
+
+    const leave = (carry: boolean) => {
+      if (carry) carryNoStockForward(noStock.map((i) => i.id));
+      markStoreDone(storeId);
+      goToPickerOrBack();
+    };
+
+    Alert.alert(
+      'No stock items',
+      `${names} ${one ? 'is' : 'are'} marked No stock. Carry ${one ? 'it' : 'them'} to your next stops to try again there? Anything you still can't find ends up in To buy.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Keep as No stock', onPress: () => leave(false) },
+        { text: 'Carry to next stops', onPress: () => leave(true) },
+      ]
+    );
   };
 
   const addAnotherStore = () => {
@@ -183,7 +258,6 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     const pending = item.status === 'pending';
     return (
       <View key={item.id} style={styles.itemCard}>
-        <Ionicons name={meta.icon} size={26} color={pending ? colors.border : meta.color} />
         <View style={styles.itemText}>
           <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
@@ -203,6 +277,14 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             <Text style={styles.statusPillText}>{meta.label}</Text>
           </Pressable>
         )}
+        <Pressable
+          style={styles.trashButton}
+          hitSlop={8}
+          onPress={() => confirmRemove(item)}
+          accessibilityLabel={`Remove ${item.name}`}
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.danger} />
+        </Pressable>
       </View>
     );
   };
@@ -370,11 +452,6 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                   <Text style={styles.sheetLinkText}>Clear mark</Text>
                 </Pressable>
               )}
-              {markItem?.is_unplanned === 1 && (
-                <Pressable style={styles.sheetLink} onPress={() => removeUnplanned(markItem)}>
-                  <Text style={[styles.sheetLinkText, { color: colors.danger }]}>Remove item</Text>
-                </Pressable>
-              )}
             </View>
           </View>
         </View>
@@ -404,7 +481,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                 autoFocus
                 onSubmitEditing={addUnplanned}
               />
-              {lastAdded && <Text style={styles.addedText}>✓ {lastAdded} added</Text>}
+              {lastAdded && <Text style={styles.addedText}>✓ {lastAdded}</Text>}
               <Pressable
                 style={[styles.modalPrimary, !clean(newItem) && styles.primaryDisabled]}
                 onPress={addUnplanned}
@@ -514,17 +591,17 @@ const styles = StyleSheet.create({
   markButton: {
     backgroundColor: colors.primary,
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 18,
-    minWidth: 88,
+    minWidth: 80,
     alignItems: 'center',
   },
   markButtonText: { color: colors.onPrimary, fontWeight: '700' },
   statusPill: {
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     borderRadius: 18,
-    minWidth: 88,
+    minWidth: 80,
     alignItems: 'center',
   },
   statusPillText: { color: colors.textOnDark, fontWeight: '700' },
@@ -648,4 +725,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  trashButton: { padding: 2 },
+  footerHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
 });

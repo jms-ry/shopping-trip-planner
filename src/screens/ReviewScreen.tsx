@@ -80,13 +80,25 @@ export default function ReviewScreen({ navigation, route }: Props) {
   };
 
   const metaFor = (item: ReviewItem) => {
+    // Any-store items that weren't bought aren't pinned to the store where they were marked.
+    if (!item.store_name && item.status !== 'bought') return 'Any store';
+
+    if (
+      item.store_name &&
+      item.resolved_store_name &&
+      item.resolved_store_name !== item.store_name
+    ) {
+      return `${item.resolved_store_name} · planned for ${item.store_name}`;
+    }
     const where =
       item.store_name ??
       (item.resolved_store_name ? `Any store · ${item.resolved_store_name}` : 'Any store');
     return item.is_unplanned === 1 ? `${where} · Unplanned` : where;
   };
 
-  const tiles = SECTIONS.filter((s) => s.status !== 'pending' || pendingCount > 0);
+  const tiles = SECTIONS.filter(
+    (s) => s.status === 'bought' || s.status === 'no_stock' || count(s.status) > 0
+  );
   const tearCount = receiptWidth > 0 ? Math.ceil(receiptWidth / TEAR) + 1 : 0;
 
   return (

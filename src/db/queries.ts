@@ -35,6 +35,7 @@ export type ShopItem = {
   store_id: number | null; // null = any store
   status: ItemStatus;
   is_unplanned: number;
+  planned_store: string | null;
 };
 
 export type ReviewItem = {
@@ -44,6 +45,13 @@ export type ReviewItem = {
   is_unplanned: number;
   store_name: string | null;
   resolved_store_name: string | null;
+};
+
+export type MatchRow = {
+  id: number;
+  status: ItemStatus;
+  store_id: number | null;
+  store_name: string | null;
 };
 
 export type InProgressTrip = {
@@ -177,14 +185,15 @@ export function getStoreById(
 // Own items first, then any-store items that are unresolved or resolved at this store.
 export function getItemsForStore(tripId: number, storeId: number): ShopItem[] {
   return db.getAllSync<ShopItem>(
-    `SELECT id, name, store_id, status, is_unplanned
-     FROM items
-     WHERE trip_id = ?
+    `SELECT i.id, i.name, i.store_id, i.status, i.is_unplanned, s.name AS planned_store
+     FROM items i LEFT JOIN stores s ON s.id = i.store_id
+     WHERE i.trip_id = ?
        AND (
-         store_id = ?
-         OR (store_id IS NULL AND (status = 'pending' OR resolved_store_id = ?))
+         i.store_id = ?
+         OR i.resolved_store_id = ?
+         OR (i.store_id IS NULL AND i.status = 'pending')
        )
-     ORDER BY (store_id IS NULL), id`,
+     ORDER BY (i.store_id IS NULL), i.id`,
     [tripId, storeId, storeId]
   );
 }
@@ -208,8 +217,8 @@ export function addUnplannedItem(tripId: number, storeId: number, name: string) 
   );
 }
 
-export function deleteUnplannedItem(itemId: number) {
-  db.runSync('DELETE FROM items WHERE id = ? AND is_unplanned = 1', [itemId]);
+export function deleteItem(itemId: number) {
+  db.runSync('DELETE FROM items WHERE id = ?', [itemId]);
 }
 
 export function markStoreDone(storeId: number) {
@@ -334,14 +343,14 @@ export function endTripEarly(tripId: number) {
   });
 }
 
-export function getStorePendingItems(tripId: number): { store_id: number; name: string }[] {
-  return db.getAllSync<{ store_id: number; name: string }>(
-    `SELECT store_id, name FROM items
-     WHERE trip_id = ? AND store_id IS NOT NULL AND status = 'pending'
-     ORDER BY id`,
-    [tripId]
-  );
-}
+// export function getStorePendingItems(tripId: number): { store_id: number; name: string }[] {
+//   return db.getAllSync<{ store_id: number; name: string }>(
+//     `SELECT store_id, name FROM items
+//      WHERE trip_id = ? AND store_id IS NOT NULL AND status = 'pending'
+//      ORDER BY id`,
+//     [tripId]
+//   );
+// }
 
 export function getTrip(
   tripId: number
@@ -369,4 +378,39 @@ export function getTripSignature(tripId: number): string {
     [tripId]
   );
   return JSON.stringify([items, stores]);
+}
+
+// An item in this trip with the same name that was not bought: No stock first, then pending.
+export function findMatchingItem(tripId: number, name: string): MatchRow | null {
+  return db.getFirstSync<MatchRow>(
+    `SELECT i.id, i.status, i.store_id, s.name AS store_name
+     FROM items i LEFT JOIN stores s ON s.id = i.store_id
+     WHERE i.trip_id = ? AND LOWER(i.name) = LOWER(?)
+       AND i.status IN ('no_stock', 'pending')
+     ORDER BY (i.status = 'no_stock') DESC, i.id
+     LIMIT 1`,
+    [tripId, name]
+  );
+}
+
+// Bought at this store, whatever store it was planned for.
+export function markBoughtHere(itemId: number, storeId: number) {
+  db.runSync(
+    `UPDATE items SET status = 'bought', resolved_store_id = ? WHERE id = ?`,
+    [storeId, itemId]
+  );
+}
+
+// No stock items become pending any-store items, so the next stores list them.
+export function carryNoStockForward(itemIds: number[]) {
+  db.withTransactionSync(() => {
+    for (const id of itemIds) {
+      db.runSync(
+        `UPDATE items
+         SET store_id = NULL, status = 'pending', resolved_store_id = NULL
+         WHERE id = ?`,
+        [id]
+      );
+    }
+  });
 }
