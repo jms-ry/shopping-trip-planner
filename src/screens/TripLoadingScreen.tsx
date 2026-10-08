@@ -75,7 +75,7 @@ export default function TripLoadingScreen({ navigation, route }: Props) {
         <Animated.View
           style={[styles.icon, { transform: [{ translateX: iconX }, { translateY: iconY }] }]}
         >
-          <Ionicons name="storefront" size={ICON_SIZE} color={colors.primary} />
+          <Ionicons name="storefront" size={ICON_SIZE} color={colors.accent} />
         </Animated.View>
         <View style={styles.track}>
           <Animated.View style={[styles.fill, { width: fillWidth }]} />
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   brand: {
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 28,
     fontWeight: '800',
     textAlign: 'center',
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   },
   barArea: { width: '100%', paddingTop: 14 },
   icon: { marginBottom: 6 },
-  track: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
-  fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  message: { color: colors.textOnDark, textAlign: 'center', marginTop: 24, fontSize: 16 },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.border },
+  fill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
+  message: { color: colors.text, textAlign: 'center', marginTop: 24, fontSize: 16 },
 });

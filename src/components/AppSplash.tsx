@@ -131,14 +131,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  wordmark: { color: colors.primary, fontSize: 30, fontWeight: '800' },
-  tagline: { color: colors.mutedOnDark, fontSize: 14 },
+  wordmark: { color: colors.accent, fontSize: 30, fontWeight: '800' },
+  tagline: { color: colors.textMuted, fontSize: 14 },
   track: {
     width: 160,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: colors.border,
     marginTop: 14,
   },
-  fill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
+  fill: { height: 6, borderRadius: 3, backgroundColor: colors.accent },
 });

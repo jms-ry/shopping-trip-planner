@@ -25,7 +25,7 @@ export default function App() {
   if (!splashDone) {
     return (
       <>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <AppSplash onDone={() => setSplashDone(true)} />
       </>
     );
@@ -37,8 +37,8 @@ export default function App() {
       <Stack.Navigator
         initialRouteName="Landing"
         screenOptions={{
-          headerStyle: { backgroundColor: colors.primary },
-          headerTintColor: colors.onPrimary,
+          headerStyle: { backgroundColor: colors.accent },
+          headerTintColor: colors.onColor,
           headerTitleStyle: { fontWeight: '700' },
           headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },

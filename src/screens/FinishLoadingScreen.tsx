@@ -75,7 +75,7 @@ export default function FinishLoadingScreen({ navigation, route }: Props) {
         <Ionicons
           name={lastLine ? 'bag-check' : 'bag-handle'}
           size={64}
-          color={colors.primary}
+          color={colors.accent}
         />
       </Animated.View>
 
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   brand: {
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 28,
     fontWeight: '800',
     marginBottom: 40,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     width: 128,
     height: 128,
     borderRadius: 64,
-    backgroundColor: 'rgba(86,226,236,0.12)',
+    backgroundColor: colors.tint,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: colors.border,
   },
-  fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
+  fill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
   message: {
-    color: colors.textOnDark,
+    color: colors.text,
     textAlign: 'center',
     marginTop: 24,
     fontSize: 16,

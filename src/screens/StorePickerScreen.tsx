@@ -26,7 +26,7 @@ const PEEK = 40; // header height, and how much of each card behind stays visibl
 const CARD_HEIGHT = 226;
 const SCALLOPS = 10;
 const MAX_VISIBLE = 3;
-const HEADER_COLORS = [colors.primary, '#3bb9c4', '#2a98a3']; // front to back
+const HEADER_COLORS = [colors.accent, '#08666e', '#064f56']; 
 
 export default function StorePickerScreen({ navigation, route }: Props) {
   const { tripId } = route.params;
@@ -127,7 +127,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
     const done = store.status === 'done';
     const allMarked = !done && store.pending === 0;
     const marked = store.total - store.pending;
-    const headerText = done ? colors.text : colors.onPrimary;
+    const headerText = done ? colors.text : colors.onColor;
 
     return (
       <>
@@ -140,8 +140,8 @@ export default function StorePickerScreen({ navigation, route }: Props) {
               {store.name}
             </Text>
           </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
+          <View style={[styles.badge, done ? styles.badgeDone : null]}>
+            <Text style={[styles.badgeText, done ? styles.badgeDoneText : null]}>
               {done ? 'Done' : store.pending > 0 ? `${store.pending} left` : 'All marked'}
             </Text>
           </View>
@@ -161,7 +161,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
                           ? colors.border
                           : colors.muted
                         : i % 2 === 0
-                        ? colors.primary
+                        ? colors.accent
                         : colors.tint,
                     },
                   ]}
@@ -208,16 +208,16 @@ export default function StorePickerScreen({ navigation, route }: Props) {
                 </View>
                 <View style={styles.doorGlass} />
                 <View style={styles.doorRow}>
-                  <Text style={styles.doorLabel}>
+                  <Text style={[styles.doorLabel, done ? styles.doorDoneLabel : null]}>
                     {done ? 'Reopen' : store.pending > 0 ? 'Shop here' : 'Finish'}
                   </Text>
                   <Ionicons
                     name={done ? 'refresh' : 'arrow-forward'}
                     size={16}
-                    color={colors.onPrimary}
+                    color={done ? colors.text : colors.onColor}
                   />
                 </View>
-                <View style={styles.knob} />
+                <View style={[styles.knob, done ? styles.knobDone : null]} />
               </Pressable>
             </View>
 
@@ -293,7 +293,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
 
         {anyPending > 0 && (
           <View style={styles.anyNote}>
-            <Ionicons name="shuffle" size={16} color={colors.primary} />
+            <Ionicons name="shuffle" size={16} color={colors.accent} />
             <Text style={styles.anyNoteText}>
               {anyPending} any-store item{anyPending === 1 ? '' : 's'} will follow you from stop to
               stop
@@ -329,7 +329,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
           </Pressable>
         )}
         <Pressable style={styles.addStoreButton} onPress={() => setShowAddStore(true)}>
-          <Ionicons name="add" size={20} color={colors.primary} />
+          <Ionicons name="add" size={20} color={colors.accent} />
           <Text style={styles.addStoreText}>Add a store</Text>
         </Pressable>
         <View style={styles.spacerBottom} />
@@ -352,21 +352,21 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48, flexGrow: 1 },
   spacerTop: { flex: 1 },
   spacerBottom: { flex: 1.5 },
-  title: { fontSize: 24, fontWeight: '800', color: colors.textOnDark },
-  subtitle: { color: colors.mutedOnDark, marginTop: 4, marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: '800', color: colors.text },
+  subtitle: { color: colors.textMuted, marginTop: 4, marginBottom: 16 },
   anyNote: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(86,226,236,0.12)',
+    backgroundColor: colors.tint,
     borderRadius: radius.md,
     padding: 12,
     marginBottom: 16,
   },
-  anyNoteText: { color: colors.textOnDark, flex: 1 },
+  anyNoteText: { color: colors.text, flex: 1 },
 
   deck: { marginTop: 4 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border },
   header: {
     height: PEEK,
     flexDirection: 'row',
@@ -380,12 +380,19 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   storeName: { fontSize: 17, fontWeight: '800', flexShrink: 1 },
   badge: {
-    backgroundColor: colors.onPrimary,
+    backgroundColor: colors.onColor,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  badgeText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
+  badgeText: { color: colors.accent, fontWeight: '700', fontSize: 12 },
+  badgeDone: {
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  badgeDoneText: { color: colors.onColor, fontWeight: '700', fontSize: 12 },
   awning: { flexDirection: 'row' },
   scallop: {
     flex: 1,
@@ -433,7 +440,7 @@ const styles = StyleSheet.create({
   door: {
     flex: 1,
     height: 128,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     borderBottomLeftRadius: 6,
@@ -452,7 +459,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   signClosed: { backgroundColor: colors.neutral },
-  signText: { color: colors.textOnDark, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  signText: { color: colors.onColor, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   doorGlass: {
     position: 'absolute',
     top: 42,
@@ -462,7 +469,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.55)',
   },
   doorRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  doorLabel: { color: colors.onPrimary, fontWeight: '800', fontSize: 14 },
+  doorLabel: { color: colors.onColor, fontWeight: '800', fontSize: 14 },
+  doorDoneLabel: { color: colors.text, fontWeight: '800', fontSize: 14 },
   knob: {
     position: 'absolute',
     right: 8,
@@ -470,7 +478,16 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.onPrimary,
+    backgroundColor: colors.onColor,
+  },
+  knobDone: {
+    position: 'absolute',
+    right: 8,
+    top: 84,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.text,
   },
   ground: {
     height: 6,
@@ -481,18 +498,18 @@ const styles = StyleSheet.create({
   },
 
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 16 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)' },
-  dotActive: { width: 20, backgroundColor: colors.primary },
-  hint: { color: colors.mutedOnDark, textAlign: 'center', fontSize: 12, marginTop: 8 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+  dotActive: { width: 20, backgroundColor: colors.accent },
+  hint: { color: colors.textMuted, textAlign: 'center', fontSize: 12, marginTop: 8 },
   reviewButton: {
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
     marginTop: 20,
   },
-  reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  reviewButtonText: { color: colors.accent, fontWeight: '700', fontSize: 16 },
   addStoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -500,10 +517,10 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     borderRadius: radius.md,
     padding: 14,
     marginTop: 20,
   },
-  addStoreText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  addStoreText: { color: colors.accent, fontWeight: '700', fontSize: 16 },
 });

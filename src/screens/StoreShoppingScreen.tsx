@@ -359,13 +359,13 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
         <View style={styles.storeCard}>
           <View style={styles.storeHeader}>
             <View style={styles.storeTitleWrap}>
-              <Ionicons name="storefront" size={22} color={colors.onPrimary} />
+              <Ionicons name="storefront" size={22} color={colors.onColor} />
               <Text style={styles.storeTitle} numberOfLines={1}>
                 {storeName}
               </Text>
             </View>
             <Pressable style={styles.addPill} onPress={() => setShowAdd(true)}>
-              <Ionicons name="add" size={18} color={colors.primary} />
+              <Ionicons name="add" size={18} color={colors.accent} />
               <Text style={styles.addPillText}>Add item</Text>
             </Pressable>
           </View>
@@ -376,7 +376,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                 key={i}
                 style={[
                   styles.scallop,
-                  { backgroundColor: i % 2 === 0 ? colors.primary : colors.tint },
+                  { backgroundColor: i % 2 === 0 ? colors.accent : colors.tint },
                 ]}
               />
             ))}
@@ -454,12 +454,12 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
           <Ionicons
             name="checkmark"
             size={20}
-            color={canFinish ? colors.onPrimary : colors.mutedOnDark}
+            color={canFinish ? colors.onColor : colors.onDisabled}
           />
         </Pressable>
 
         <Pressable style={styles.addStoreLink} onPress={() => setShowAddStore(true)}>
-          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
           <Text style={styles.addStoreLinkText}>Add another store</Text>
         </Pressable>
         <View style={styles.spacerTop} />
@@ -477,7 +477,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
           },
         ]}
       >
-        <Ionicons name="checkmark-circle" size={20} color={colors.textOnDark} />
+        <Ionicons name="checkmark-circle" size={20} color={colors.text} />
         <Text style={styles.toastText} numberOfLines={2}>
           {toastMessage}
         </Text>
@@ -499,7 +499,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                   {markItem?.name}
                 </Text>
                 <Pressable onPress={() => setMarkId(null)} hitSlop={8} accessibilityLabel="Close">
-                  <Ionicons name="close" size={24} color={colors.onPrimary} />
+                  <Ionicons name="close" size={24} color={colors.onColor} />
                 </Pressable>
               </View>
 
@@ -520,12 +520,12 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                       <Ionicons
                         name={meta.icon}
                         size={24}
-                        color={selected ? colors.textOnDark : meta.color}
+                        color={selected ? colors.onColor : meta.color}
                       />
                       <Text
                         style={[
                           styles.markOptionText,
-                          { color: selected ? colors.textOnDark : meta.color },
+                          { color: selected ? colors.onColor : meta.color },
                         ]}
                       >
                         {opt.label}
@@ -555,7 +555,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             <View style={styles.dialogHeader}>
               <Text style={styles.sheetTitle}>Add item</Text>
               <Pressable onPress={closeAdd} hitSlop={8} accessibilityLabel="Close">
-                <Ionicons name="close" size={24} color={colors.onPrimary} />
+                <Ionicons name="close" size={24} color={colors.onColor} />
               </Pressable>
             </View>
             <View style={styles.dialogBody}>
@@ -642,30 +642,30 @@ const styles = StyleSheet.create({
   spacerBottom: { flex: 1.5 },
 
   // Store card
-  storeCard: { backgroundColor: colors.surface, borderRadius: radius.lg },
+  storeCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg },
   storeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
   },
   storeTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  storeTitle: { color: colors.onPrimary, fontSize: 18, fontWeight: '800', flexShrink: 1 },
+  storeTitle: { color: colors.onColor, fontSize: 18, fontWeight: '800', flexShrink: 1 },
   addPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.onPrimary,
+    backgroundColor: colors.onColor,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 18,
   },
-  addPillText: { color: colors.primary, fontWeight: '700' },
+  addPillText: { color: colors.accent, fontWeight: '700' },
   awning: { flexDirection: 'row' },
   scallop: {
     flex: 1,
@@ -689,14 +689,14 @@ const styles = StyleSheet.create({
   itemName: { fontSize: 16, fontWeight: '600', color: colors.text },
   tag: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   markButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 18,
     minWidth: 80,
     alignItems: 'center',
   },
-  markButtonText: { color: colors.onPrimary, fontWeight: '700' },
+  markButtonText: { color: colors.onColor, fontWeight: '700' },
   statusPill: {
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -704,7 +704,7 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: 'center',
   },
-  statusPillText: { color: colors.textOnDark, fontWeight: '700' },
+  statusPillText: { color: colors.onColor, fontWeight: '700' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 4 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
   dotActive: { width: 20, backgroundColor: colors.accent },
@@ -715,21 +715,21 @@ const styles = StyleSheet.create({
   footerText: { color: colors.textMuted },
 
   // Under the card
-  hint: { color: colors.amber, marginTop: 16 },
-  note: { color: colors.mutedOnDark, marginTop: 16 },
+  hint: { color: colors.warning, marginTop: 16 },
+  note: { color: colors.textMuted, marginTop: 16 },
   doneButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     padding: 16,
     borderRadius: radius.md,
     marginTop: 20,
   },
-  doneDisabled: { backgroundColor: 'rgba(86,226,236,0.2)' },
-  doneText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
-  doneTextDisabled: { color: colors.mutedOnDark },
+  doneDisabled: { backgroundColor: colors.primaryDisabled },
+  doneText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
+  doneTextDisabled: { color: colors.onDisabled },
 
   // Bottom sheet (mark)
   sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
@@ -743,13 +743,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
-  sheetTitle: { color: colors.onPrimary, fontSize: 17, fontWeight: '800', flexShrink: 1 },
+  sheetTitle: { color: colors.onColor, fontSize: 17, fontWeight: '800', flexShrink: 1 },
   markBody: { padding: 16, gap: 10 },
   markOption: {
     flexDirection: 'row',
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopLeftRadius: radius.lg,
@@ -798,13 +798,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.field,
   },
   modalPrimary: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
   },
   primaryDisabled: { backgroundColor: colors.primaryDisabled },
-  modalPrimaryText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  modalPrimaryText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
 
   // Leftover dialog
   modalBox: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, gap: 10 },
@@ -819,12 +819,12 @@ const styles = StyleSheet.create({
   },
   modalSecondaryText: { color: colors.accent, fontWeight: '600' },
   modalCancel: {
-    backgroundColor: colors.amber,
+    backgroundColor: colors.warning,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
   },
-  modalCancelText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  modalCancelText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
   trashButton: { padding: 2 },
   footerHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   addStoreLink: {
@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 4,
   },
-  addStoreLinkText: { color: colors.primary, fontWeight: '700' },
+  addStoreLinkText: { color: colors.accent, fontWeight: '700' },
   root: { flex: 1 },
   toast: {
     position: 'absolute',
@@ -850,5 +850,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: radius.md,
   },
-  toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
+  toastText: { color: colors.text, fontWeight: '700', flexShrink: 1 },
 });

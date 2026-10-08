@@ -183,7 +183,7 @@ export default function LandingScreen({ navigation, route }: Props) {
           <View style={styles.actionRow}>
             <Pressable style={styles.resumeButton} onPress={() => resume(trip)}>
               <Text style={styles.resumeText}>Resume</Text>
-              <Ionicons name="arrow-forward" size={16} color={colors.onPrimary} />
+              <Ionicons name="arrow-forward" size={16} color={colors.onColor} />
             </Pressable>
             {!allBought && trip.bought_count > 0 && (
               <Pressable style={styles.textButton} onPress={() => confirmEndTrip(trip)}>
@@ -211,7 +211,7 @@ export default function LandingScreen({ navigation, route }: Props) {
           </View>
         </View>
         <Pressable style={styles.addPill} onPress={() => addToTrip(item)}>
-          <Ionicons name="add" size={16} color={colors.onPrimary} />
+          <Ionicons name="add" size={16} color={colors.accent} />
           <Text style={styles.addPillText}>Add to trip</Text>
         </Pressable>
         <Pressable
@@ -272,7 +272,7 @@ export default function LandingScreen({ navigation, route }: Props) {
             : 'checkmark-circle'
         }
         size={20}
-        color={colors.textOnDark}
+        color={colors.onColor}
       />
       <Text style={styles.toastText} numberOfLines={2}>
         {toast.message}
@@ -286,7 +286,7 @@ export default function LandingScreen({ navigation, route }: Props) {
         <View style={styles.hero}>
           <Text style={styles.heroTitle}>Hop between shops.{'\n'}Forget nothing.</Text>
           <Pressable style={styles.heroButton} onPress={() => navigation.navigate('CartLoading')}>
-            <Ionicons name="add" size={22} color={colors.primary} />
+            <Ionicons name="add" size={22} color={colors.accent} />
             <Text style={styles.heroButtonText}>New trip</Text>
           </Pressable>
         </View>
@@ -311,7 +311,7 @@ export default function LandingScreen({ navigation, route }: Props) {
           <SectionHeader title="To buy" count={toBuy.length} />
           {toBuy.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="checkmark-circle-outline" size={30} color={colors.mutedOnDark} />
+              <Ionicons name="checkmark-circle-outline" size={30} color={colors.textMuted} />
               <Text style={styles.empty}>
                 Nothing waiting. Items marked No stock land here after a trip.
               </Text>
@@ -334,7 +334,7 @@ export default function LandingScreen({ navigation, route }: Props) {
           <SectionHeader title="Saved journeys" count={trips.length} />
           {trips.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="map-outline" size={30} color={colors.mutedOnDark} />
+              <Ionicons name="map-outline" size={30} color={colors.textMuted} />
               <Text style={styles.empty}>
                 No journeys yet. Finish a trip and it will be saved here.
               </Text>
@@ -374,7 +374,7 @@ export default function LandingScreen({ navigation, route }: Props) {
                   <Text style={styles.sheetCountText}>{sheetCount}</Text>
                 </View>
                 <Pressable onPress={() => setViewAll(null)} hitSlop={8} accessibilityLabel="Close">
-                  <Ionicons name="close" size={24} color={colors.onPrimary} />
+                  <Ionicons name="close" size={24} color={colors.onColor} />
                 </Pressable>
               </View>
               <ScrollView style={styles.sheetList} contentContainerStyle={styles.sheetListContent}>
@@ -401,34 +401,37 @@ export default function LandingScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 48 },
   hero: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 28,
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
   },
-  heroTitle: { fontSize: 26, fontWeight: '800', lineHeight: 32, color: colors.onPrimary },
+  heroTitle: { fontSize: 26, fontWeight: '800', lineHeight: 32, color: colors.onColor },
   heroButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: colors.onPrimary,
+    backgroundColor: colors.surface,
     paddingVertical: 14,
     borderRadius: radius.md,
     marginTop: 18,
   },
-  heroButtonText: { color: colors.primary, fontSize: 16, fontWeight: '700' },
+  heroButtonText: { color: colors.accent, fontSize: 16, fontWeight: '700' },
   body: { padding: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, marginBottom: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.textOnDark },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   countBadge: { backgroundColor: colors.tint, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
   countText: { color: colors.accent, fontWeight: '700', fontSize: 13 },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'solid',
   },
   tripCard: { padding: 14, gap: 8 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -437,12 +440,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: radius.md,
   },
-  resumeText: { color: colors.onPrimary, fontWeight: '700' },
+  resumeText: { color: colors.onColor, fontWeight: '700' },
   textButton: { paddingVertical: 10, paddingHorizontal: 8 },
   textButtonLabel: { color: colors.accent, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
@@ -456,12 +459,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surface,
     paddingVertical: 7,
     paddingHorizontal: 10,
     borderRadius: 16,
   },
-  addPillText: { color: colors.onPrimary, fontWeight: '700', fontSize: 13 },
+  addPillText: { color: colors.accent, fontWeight: '700', fontSize: 13 },
   iconButton: { padding: 6 },
   viewAllRow: {
     flexDirection: 'row',
@@ -475,14 +478,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 20,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'transparent',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: colors.textMuted,
     borderStyle: 'dashed',
     marginBottom: 10,
   },
-  empty: { color: colors.mutedOnDark, textAlign: 'center' },
+  empty: { color: colors.textMuted, textAlign: 'center' },
 
   sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   sheet: {
@@ -495,33 +498,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
-  sheetTitle: { color: colors.onPrimary, fontSize: 17, fontWeight: '800' },
+  sheetTitle: { color: colors.onColor, fontSize: 17, fontWeight: '800' },
   sheetCount: {
     marginLeft: 'auto',
-    backgroundColor: colors.onPrimary,
+    backgroundColor: colors.onColor,
     borderRadius: 12,
     minWidth: 24,
     paddingHorizontal: 8,
     paddingVertical: 2,
     alignItems: 'center',
   },
-  sheetCountText: { color: colors.primary, fontWeight: '800' },
+  sheetCountText: { color: colors.accent, fontWeight: '800' },
   sheetList: { flexShrink: 1, backgroundColor: colors.field },
   sheetListContent: { padding: 12 },
   sheetDone: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     margin: 16,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
   },
-  sheetDoneText: { color: colors.onPrimary, fontWeight: '700', fontSize: 16 },
+  sheetDoneText: { color: colors.onColor, fontWeight: '700', fontSize: 16 },
   root: { flex: 1 },
   toast: {
     position: 'absolute',
@@ -537,7 +540,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   toastDestroy: { backgroundColor: colors.danger },
-  toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
+  toastText: { color: colors.onColor, fontWeight: '700', flexShrink: 1 },
   toastInHeader: { top: 8 },
-  toastInfo: { backgroundColor: colors.accent },
+  toastInfo: { backgroundColor: colors.info },
 });
