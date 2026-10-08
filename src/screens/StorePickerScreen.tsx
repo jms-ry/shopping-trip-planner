@@ -14,37 +14,33 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types/navigation';
 import { colors, radius } from '../theme';
-import {
-  getPendingAnyStoreCount,
-  getStorePendingItems,
-  getStoresForTrip,
-  reopenStore,
-  StoreRow,
-} from '../db/queries';
+import { getPendingAnyStoreCount, getStoresForTrip, reopenStore, StoreRow } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
+import AddStoreDialog from '../components/AddStoreDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StorePicker'>;
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = 90;
 const PEEK = 40; // header height, and how much of each card behind stays visible
-const CARD_HEIGHT = 290;
-const ROW_H = 26;
+const CARD_HEIGHT = 226;
 const SCALLOPS = 10;
 const MAX_VISIBLE = 3;
 const HEADER_COLORS = [colors.primary, '#3bb9c4', '#2a98a3']; // front to back
 
 export default function StorePickerScreen({ navigation, route }: Props) {
   const { tripId } = route.params;
+  useLeaveToast(tripId);
+
   const [stores, setStores] = useState<StoreRow[]>([]);
-  const [pendingNames, setPendingNames] = useState<Map<number, string[]>>(new Map());
   const [anyPending, setAnyPending] = useState(0);
   const [order, setOrder] = useState<number[]>([]); // store ids, front card first
 
   const pan = useRef(new Animated.Value(0)).current;
   const deckSize = useRef(0);
-  
-  useLeaveToast(tripId);
+
+  const [showAddStore, setShowAddStore] = useState(false);
+
   // Single open store: skip the picker. Runs on mount only.
   useEffect(() => {
     const rows = getStoresForTrip(tripId);
@@ -55,12 +51,7 @@ export default function StorePickerScreen({ navigation, route }: Props) {
 
   const load = () => {
     const rows = getStoresForTrip(tripId);
-    const grouped = new Map<number, string[]>();
-    for (const r of getStorePendingItems(tripId)) {
-      grouped.set(r.store_id, [...(grouped.get(r.store_id) ?? []), r.name]);
-    }
     setStores(rows);
-    setPendingNames(grouped);
     setAnyPending(getPendingAnyStoreCount(tripId));
 
     // Keep the current deck order, add new stores at the back,
@@ -131,49 +122,17 @@ export default function StorePickerScreen({ navigation, route }: Props) {
   const openCount = stores.filter((s) => s.status === 'open').length;
   const anyDone = stores.some((s) => s.status === 'done');
 
-  // ---- Card pieces ----
-  const renderBullet = (name: string, i: number) => (
-    <View key={`${name}-${i}`} style={styles.bulletRow}>
-      <Text style={styles.bullet}>•</Text>
-      <Text style={styles.bulletText} numberOfLines={1}>
-        {name}
-      </Text>
-    </View>
-  );
-
-  const renderItemColumns = (names: string[]) => {
-    const total = names.length;
-    const col1 = names.slice(0, 5);
-    const col2 = total > 10 ? names.slice(5, 9) : names.slice(5, 10);
-    const extra = total > 10 ? total - 9 : 0;
-    return (
-      <View style={styles.columns}>
-        <View style={styles.column}>{col1.map(renderBullet)}</View>
-        <View style={styles.column}>
-          {col2.map(renderBullet)}
-          {extra > 0 && (
-            <View style={styles.bulletRow}>
-              <Text style={styles.moreText}>+{extra} more items</Text>
-            </View>
-          )}
-        </View>
-      </View>
-    );
-  };
-
+  // ---- Card ----
   const renderCardContent = (store: StoreRow, depth: number) => {
     const done = store.status === 'done';
-    const names = pendingNames.get(store.id) ?? [];
+    const allMarked = !done && store.pending === 0;
     const marked = store.total - store.pending;
     const headerText = done ? colors.text : colors.onPrimary;
 
     return (
       <>
         <View
-          style={[
-            styles.header,
-            { backgroundColor: done ? colors.border : HEADER_COLORS[depth] },
-          ]}
+          style={[styles.header, { backgroundColor: done ? colors.border : HEADER_COLORS[depth] }]}
         >
           <View style={styles.headerLeft}>
             <Ionicons name="storefront" size={20} color={headerText} />
@@ -210,48 +169,59 @@ export default function StorePickerScreen({ navigation, route }: Props) {
               ))}
             </View>
 
-            {done ? (
-              <View style={styles.listArea}>
-                <View style={styles.doneBody}>
-                  <Ionicons name="checkmark-circle" size={40} color={colors.success} />
-                  <Text style={styles.doneTitle}>Done</Text>
-                  <Text style={styles.doneMeta}>
-                    {store.total} item{store.total === 1 ? '' : 's'} handled
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.listArea}>
-                {names.length === 0 ? (
-                  <View style={styles.doneBody}>
-                    <Ionicons name="checkmark-circle-outline" size={34} color={colors.textMuted} />
-                    <Text style={styles.doneMeta}>All items marked</Text>
-                  </View>
+            <View style={styles.facade}>
+              <View style={[styles.window, done && styles.windowDone]}>
+                <View style={styles.glareWide} />
+                <View style={styles.glareThin} />
+                {done ? (
+                  <>
+                    <Ionicons name="checkmark-circle" size={44} color={colors.success} />
+                    <Text style={styles.windowLabel}>Done</Text>
+                  </>
+                ) : allMarked ? (
+                  <>
+                    <Ionicons name="checkmark-circle-outline" size={44} color={colors.accent} />
+                    <Text style={styles.windowLabel}>All marked</Text>
+                  </>
                 ) : (
-                  renderItemColumns(names)
+                  <>
+                    <Text style={styles.windowBig}>{store.pending}</Text>
+                    <Text style={styles.windowLabel}>
+                      item{store.pending === 1 ? '' : 's'} left
+                    </Text>
+                  </>
+                )}
+                {!done && marked > 0 && (
+                  <Text style={styles.windowSmall}>
+                    {marked} of {store.total} marked
+                  </Text>
                 )}
               </View>
-            )}
 
-            <View style={styles.footer}>
-              {!done && marked > 0 && (
-                <Text style={styles.footerText}>
-                  {marked} of {store.total} marked
-                </Text>
-              )}
-              {done ? (
-                <Pressable style={styles.reopenButton} onPress={() => reopen(store)}>
-                  <Text style={styles.reopenText}>Reopen</Text>
-                </Pressable>
-              ) : (
-                <Pressable style={styles.shopButton} onPress={() => openStore(store)}>
-                  <Text style={styles.shopText}>
-                    {store.pending > 0 ? 'Shop here' : 'Finish store'}
+              <Pressable
+                style={[styles.door, done && styles.doorClosed]}
+                onPress={() => (done ? reopen(store) : openStore(store))}
+                accessibilityLabel={done ? `Reopen ${store.name}` : `Shop at ${store.name}`}
+              >
+                <View style={[styles.sign, done && styles.signClosed]}>
+                  <Text style={styles.signText}>{done ? 'CLOSED' : 'OPEN'}</Text>
+                </View>
+                <View style={styles.doorGlass} />
+                <View style={styles.doorRow}>
+                  <Text style={styles.doorLabel}>
+                    {done ? 'Reopen' : store.pending > 0 ? 'Shop here' : 'Finish'}
                   </Text>
-                  <Ionicons name="arrow-forward" size={18} color={colors.onPrimary} />
-                </Pressable>
-              )}
+                  <Ionicons
+                    name={done ? 'refresh' : 'arrow-forward'}
+                    size={16}
+                    color={colors.onPrimary}
+                  />
+                </View>
+                <View style={styles.knob} />
+              </Pressable>
             </View>
+
+            <View style={styles.ground} />
           </>
         )}
       </>
@@ -310,41 +280,71 @@ export default function StorePickerScreen({ navigation, route }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{anyDone ? 'Where to next?' : 'Where to start?'}</Text>
-      <Text style={styles.subtitle}>
-        {openCount} of {stores.length} store{stores.length === 1 ? '' : 's'} left
-      </Text>
+    <>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>
+          {openCount === 0 ? 'All stores done' : anyDone ? 'Where to next?' : 'Where to start?'}
+        </Text>
+        <Text style={styles.subtitle}>
+          {openCount === 0
+            ? 'Reopen a store to make changes.'
+            : `${openCount} of ${stores.length} store${stores.length === 1 ? '' : 's'} left`}
+        </Text>
 
-      {anyPending > 0 && (
-        <View style={styles.anyNote}>
-          <Ionicons name="shuffle" size={16} color={colors.primary} />
-          <Text style={styles.anyNoteText}>
-            {anyPending} any-store item{anyPending === 1 ? '' : 's'} will follow you from stop to
-            stop
-          </Text>
-        </View>
-      )}
-      <View style={styles.spacerTop} />
-      <View style={[styles.deck, { height: PEEK * behind + CARD_HEIGHT }]}>
-        {visible
-          .map((store, depth) => ({ store, depth }))
-          .reverse() // deepest first, so the front card is drawn last
-          .map(({ store, depth }) => renderCard(store, depth))}
-      </View>
-
-      {deck.length > 1 && (
-        <>
-          <View style={styles.dots}>
-            {stores.map((s) => (
-              <View key={s.id} style={[styles.dot, s.id === deck[0]?.id && styles.dotActive]} />
-            ))}
+        {anyPending > 0 && (
+          <View style={styles.anyNote}>
+            <Ionicons name="shuffle" size={16} color={colors.primary} />
+            <Text style={styles.anyNoteText}>
+              {anyPending} any-store item{anyPending === 1 ? '' : 's'} will follow you from stop to
+              stop
+            </Text>
           </View>
-          <Text style={styles.hint}>Swipe the card, or tap a card behind it</Text>
-        </>
-      )}
-      <View style={styles.spacerBottom} />
-    </ScrollView>
+        )}
+
+        <View style={styles.spacerTop} />
+
+        <View style={[styles.deck, { height: PEEK * behind + CARD_HEIGHT }]}>
+          {visible
+            .map((store, depth) => ({ store, depth }))
+            .reverse() // deepest first, so the front card is drawn last
+            .map(({ store, depth }) => renderCard(store, depth))}
+        </View>
+
+        {deck.length > 1 && (
+          <>
+            <View style={styles.dots}>
+              {stores.map((s) => (
+                <View key={s.id} style={[styles.dot, s.id === deck[0]?.id && styles.dotActive]} />
+              ))}
+            </View>
+            <Text style={styles.hint}>Swipe the card, or tap a card behind it</Text>
+          </>
+        )}
+        {openCount === 0 && (
+          <Pressable
+            style={styles.reviewButton}
+            onPress={() => navigation.replace('Review', { tripId })}
+          >
+            <Text style={styles.reviewButtonText}>Back to review</Text>
+          </Pressable>
+        )}
+        <Pressable style={styles.addStoreButton} onPress={() => setShowAddStore(true)}>
+          <Ionicons name="add" size={20} color={colors.primary} />
+          <Text style={styles.addStoreText}>Add a store</Text>
+        </Pressable>
+        <View style={styles.spacerBottom} />
+      </ScrollView>
+      <AddStoreDialog
+        visible={showAddStore}
+        tripId={tripId}
+        onClose={() => setShowAddStore(false)}
+        onAdded={(result) => {
+          setShowAddStore(false);
+          load();
+          bringToFront(result.storeId);
+        }}
+      />
+    </>
   );
 }
 
@@ -394,39 +394,116 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 14,
   },
 
-  listArea: { height: 12 + ROW_H * 5 + 8, paddingHorizontal: 16, paddingTop: 12 },
-  columns: { flexDirection: 'row', gap: 12 },
-  column: { flex: 1 },
-  bulletRow: { height: ROW_H, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  bullet: { color: colors.accent, fontSize: 16, fontWeight: '800' },
-  bulletText: { flex: 1, color: colors.text, fontSize: 15 },
-  moreText: { color: colors.accent, fontWeight: '700', fontSize: 14 },
-  doneBody: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  doneTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  doneMeta: { color: colors.textMuted },
-
-  footer: { marginTop: 'auto', paddingHorizontal: 14, paddingBottom: 14, gap: 6 },
-  footerText: { color: colors.textMuted, fontSize: 12 },
-  shopButton: {
-    flexDirection: 'row',
+  // Shop front
+  facade: { flexDirection: 'row', gap: 12, paddingHorizontal: 14, paddingTop: 14 },
+  window: {
+    flex: 1.5,
+    height: 128,
+    borderRadius: 12,
+    borderWidth: 4,
+    borderColor: colors.accent,
+    backgroundColor: '#DDF6F9',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 2,
+  },
+  windowDone: { borderColor: colors.border, backgroundColor: colors.muted },
+  glareWide: {
+    position: 'absolute',
+    top: 8,
+    left: 22,
+    width: 12,
+    height: 52,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    transform: [{ rotate: '25deg' }],
+  },
+  glareThin: {
+    position: 'absolute',
+    top: 8,
+    left: 42,
+    width: 5,
+    height: 52,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    transform: [{ rotate: '25deg' }],
+  },
+  windowBig: { fontSize: 40, fontWeight: '800', color: colors.text, lineHeight: 44 },
+  windowLabel: { color: colors.textMuted, fontWeight: '600' },
+  windowSmall: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
+
+  door: {
+    flex: 1,
+    height: 128,
     backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-  },
-  shopText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
-  reopenButton: {
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
     alignItems: 'center',
-    backgroundColor: colors.tint,
-    paddingVertical: 14,
-    borderRadius: radius.md,
+    justifyContent: 'flex-end',
+    paddingBottom: 12,
   },
-  reopenText: { color: colors.accent, fontSize: 16, fontWeight: '700' },
+  doorClosed: { backgroundColor: colors.border },
+  sign: {
+    position: 'absolute',
+    top: 14,
+    backgroundColor: colors.success,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  signClosed: { backgroundColor: colors.neutral },
+  signText: { color: colors.textOnDark, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  doorGlass: {
+    position: 'absolute',
+    top: 42,
+    width: 38,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  doorRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  doorLabel: { color: colors.onPrimary, fontWeight: '800', fontSize: 14 },
+  knob: {
+    position: 'absolute',
+    right: 8,
+    top: 84,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.onPrimary,
+  },
+  ground: {
+    height: 6,
+    marginHorizontal: 10,
+    marginTop: 8,
+    borderRadius: 3,
+    backgroundColor: colors.muted,
+  },
 
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 16 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.25)' },
   dotActive: { width: 20, backgroundColor: colors.primary },
   hint: { color: colors.mutedOnDark, textAlign: 'center', fontSize: 12, marginTop: 8 },
+  reviewButton: {
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    padding: 14,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  reviewButtonText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  addStoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    padding: 14,
+    marginTop: 20,
+  },
+  addStoreText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
 });

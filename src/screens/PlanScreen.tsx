@@ -17,6 +17,8 @@ import type { RootStackParamList } from '../types/navigation';
 import { colors, radius } from '../theme';
 import { createTrip, DraftItem, getToBuyById } from '../db/queries';
 import { startTripSession } from '../lib/tripSession';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SheetBottomInset from '../components/SheetBottomInset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Plan'>;
 type ToastKind = 'added' | 'removed';
@@ -248,30 +250,33 @@ export default function PlanScreen({ navigation, route }: Props) {
         animationType="slide"
         onRequestClose={() => setShowCart(false)}
       >
-        <View style={styles.sheetBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCart(false)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Ionicons name="cart" size={20} color={colors.onPrimary} />
-              <Text style={styles.cartTitle}>Cart</Text>
-              <View style={styles.cartCount}>
-                <Text style={styles.cartCountText}>{items.length}</Text>
+        <SafeAreaProvider>
+          <View style={styles.sheetBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCart(false)} />
+            <View style={styles.sheet}>
+              <View style={styles.sheetHeader}>
+                <Ionicons name="cart" size={20} color={colors.onPrimary} />
+                <Text style={styles.cartTitle}>Cart</Text>
+                <View style={styles.cartCount}>
+                  <Text style={styles.cartCountText}>{items.length}</Text>
+                </View>
+                <Pressable onPress={() => setShowCart(false)} hitSlop={8} accessibilityLabel="Close cart">
+                  <Ionicons name="close" size={24} color={colors.onPrimary} />
+                </Pressable>
               </View>
-              {toastView}
-              <Pressable onPress={() => setShowCart(false)} hitSlop={8} accessibilityLabel="Close cart">
-                <Ionicons name="close" size={24} color={colors.onPrimary} />
+
+              <ScrollView style={styles.sheetList}>
+                {entries.map((entry, position) => renderCartRow(entry, position))}
+              </ScrollView>
+
+              <Pressable style={styles.sheetDone} onPress={() => setShowCart(false)}>
+                <Text style={styles.sheetDoneText}>Done</Text>
               </Pressable>
+              <SheetBottomInset/>
             </View>
-
-            <ScrollView style={styles.sheetList}>
-              {entries.map((entry, position) => renderCartRow(entry, position))}
-            </ScrollView>
-
-            <Pressable style={styles.sheetDone} onPress={() => setShowCart(false)}>
-              <Text style={styles.sheetDoneText}>Done</Text>
-            </Pressable>
+            {toastView}
           </View>
-        </View>
+        </SafeAreaProvider>
       </Modal>
     </View>
   );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,7 +9,9 @@ import { colors, radius } from '../theme';
 import {
   addOrReopenStore,
   addUnplannedItem,
-  deleteUnplannedItem,
+  getOtherStoreCount,
+  getTrip,
+  removeItem,
   getItemsForStore,
   getOtherOpenStoreCount,
   getStoreById,
@@ -18,8 +20,15 @@ import {
   moveLeftoversToNoStock,
   setItemStatus,
   ShopItem,
+  findMatchingItem,
+  markBoughtHere,
+  carryNoStockForward,
 } from '../db/queries';
 import { useLeaveToast } from '../lib/useLeaveToast';
+import { clearTripSession, queueToast } from '../lib/tripSession';
+import AddStoreDialog from '../components/AddStoreDialog';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SheetBottomInset from '../components/SheetBottomInset';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoreShopping'>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -37,10 +46,10 @@ const STATUS_META: Record<ItemStatus, { label: string; color: string; icon: Icon
 const OPTIONS: { status: Exclude<ItemStatus, 'pending'>; label: string }[] = [
   { status: 'bought', label: 'Bought' },
   { status: 'no_stock', label: 'No stock' },
-  { status: 'skipped', label: 'Skip' },
 ];
 
 const clean = (s: string) => s.trim().replace(/\s+/g, ' ');
+const isAnchored = (i: ShopItem) => !(i.store_id === null && i.status === 'pending');
 
 export default function StoreShoppingScreen({ navigation, route }: Props) {
   const { tripId, storeId } = route.params;
@@ -62,6 +71,10 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   const [showLeftover, setShowLeftover] = useState(false);
   const [extraStore, setExtraStore] = useState('');
 
+  const [showAddStore, setShowAddStore] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastAnim = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const load = () => {
     setItems(getItemsForStore(tripId, storeId));
     const store = getStoreById(storeId);
@@ -74,6 +87,22 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     }, [tripId, storeId])
   );
 
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastAnim.stopAnimation();
+    Animated.timing(toastAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    toastTimer.current = setTimeout(() => {
+      Animated.timing(toastAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+    }, 2500);
+  };
+  
   // ---- Derived data ----
   const pages: ShopItem[][] = [];
   for (let i = 0; i < items.length; i += PAGE_SIZE) pages.push(items.slice(i, i + PAGE_SIZE));
@@ -114,10 +143,55 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     load();
   };
 
-  const removeUnplanned = (item: ShopItem) => {
-    deleteUnplannedItem(item.id);
-    setMarkId(null);
-    load();
+  const confirmRemove = (item: ShopItem) => {
+    const leavesStoreEmpty =
+      isAnchored(item) && items.filter((i) => i.id !== item.id && isAnchored(i)).length === 0;
+    const lastStore = getOtherStoreCount(tripId, storeId) === 0;
+    const otherAny = items.filter((i) => i.id !== item.id && !isAnchored(i)).length;
+
+    let title = 'Remove item';
+    let message = `Remove "${item.name}" from this trip?`;
+    let action = 'Remove';
+
+    if (leavesStoreEmpty && lastStore) {
+      title = 'Cancel trip?';
+      message =
+        `"${item.name}" is the last item in this trip. Removing it cancels the trip.` +
+        (otherAny > 0
+          ? ` Your ${otherAny} any-store item${otherAny === 1 ? '' : 's'} will go to To buy.`
+          : '');
+      action = 'Remove and cancel trip';
+    } else if (leavesStoreEmpty) {
+      message = `"${item.name}" is the last item for ${storeName}. ${storeName} will be removed from this trip too.`;
+      action = 'Remove item and store';
+    } else if (item.store_id === null) {
+      message += " It won't show at your next stops either.";
+    }
+
+    Alert.alert(title, message, [
+      { text: 'Keep', style: 'cancel' },
+      { text: action, style: 'destructive', onPress: () => removeConfirmed(item) },
+    ]);
+  };
+
+  const removeConfirmed = (item: ShopItem) => {
+    const tripName = getTrip(tripId)?.name ?? '';
+    const result = removeItem(tripId, storeId, item.id);
+
+    if (result === 'item') {
+      load();
+    } else if (result === 'store') {
+      // This store no longer exists: leave its screen.
+      if (getOtherOpenStoreCount(tripId, storeId) > 0) {
+        goToPickerOrBack();
+      } else {
+        navigation.replace('Review', { tripId });
+      }
+    } else {
+      clearTripSession();
+      queueToast({ message: `Trip "${tripName}" aborted`, kind: 'destroy' });
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+    }
   };
 
   // ---- Unplanned items ----
@@ -127,14 +201,47 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     setLastAdded(null);
   };
 
+  const saveUnplanned = (name: string) => {
+    addUnplannedItem(tripId, storeId, name);
+    setNewItem('');
+    setLastAdded(`${name} added`);
+    goToPage(Math.floor(items.length / PAGE_SIZE)); // page that will hold the new item
+    load();
+  };
+
+  const resolveExisting = (itemId: number, name: string) => {
+    markBoughtHere(itemId, storeId);
+    setNewItem('');
+    setLastAdded(`${name} marked as bought`);
+    load();
+  };
+
   const addUnplanned = () => {
     const name = clean(newItem);
     if (!name) return;
-    addUnplannedItem(tripId, storeId, name);
-    setNewItem('');
-    setLastAdded(name);
-    goToPage(Math.floor(items.length / PAGE_SIZE)); // page that will hold the new item
-    load();
+
+    const match = findMatchingItem(tripId, name);
+    if (!match) {
+      saveUnplanned(name);
+      return;
+    }
+
+    const where =
+      match.status === 'no_stock'
+        ? `was marked No stock${match.store_name ? ` at ${match.store_name}` : ''}`
+        : match.store_name
+        ? `is still planned for ${match.store_name}`
+        : 'is still on your list as an any-store item';
+
+    Alert.alert(
+      'Already in this trip',
+      `"${name}" ${where}. Mark it as bought here instead of adding a new item?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Add as new', onPress: () => saveUnplanned(name) },
+        { text: 'Mark as bought', onPress: () => resolveExisting(match.id, name) },
+      ]
+    );
   };
 
   // ---- Finishing the store ----
@@ -149,15 +256,46 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
   };
 
   const finishStore = () => {
+    // Planned items marked No stock here (unplanned items can't be out of stock).
+    const noStock = items.filter((i) => i.status === 'no_stock' && i.is_unplanned === 0);
+
     if (getOtherOpenStoreCount(tripId, storeId) > 0) {
-      markStoreDone(storeId);
-      goToPickerOrBack();
+      if (noStock.length > 0) {
+        askToCarry(noStock);
+      } else {
+        markStoreDone(storeId);
+        goToPickerOrBack();
+      }
     } else if (leftoverAny.length > 0) {
       setShowLeftover(true); // last store, but any-store items remain
     } else {
       markStoreDone(storeId);
       navigation.replace('Review', { tripId });
     }
+  };
+
+  const askToCarry = (noStock: ShopItem[]) => {
+    const names =
+      noStock.length > 3
+        ? `${noStock.slice(0, 3).map((i) => i.name).join(', ')} and ${noStock.length - 3} more`
+        : noStock.map((i) => i.name).join(', ');
+    const one = noStock.length === 1;
+
+    const leave = (carry: boolean) => {
+      if (carry) carryNoStockForward(noStock.map((i) => i.id));
+      markStoreDone(storeId);
+      goToPickerOrBack();
+    };
+
+    Alert.alert(
+      'No stock items',
+      `${names} ${one ? 'is' : 'are'} marked No stock. Carry ${one ? 'it' : 'them'} to your next stops to try again there? Anything you still can't find ends up in To buy.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Keep as No stock', onPress: () => leave(false) },
+        { text: 'Carry to next stops', onPress: () => leave(true) },
+      ]
+    );
   };
 
   const addAnotherStore = () => {
@@ -183,7 +321,6 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
     const pending = item.status === 'pending';
     return (
       <View key={item.id} style={styles.itemCard}>
-        <Ionicons name={meta.icon} size={26} color={pending ? colors.border : meta.color} />
         <View style={styles.itemText}>
           <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
@@ -203,12 +340,20 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             <Text style={styles.statusPillText}>{meta.label}</Text>
           </Pressable>
         )}
+        <Pressable
+          style={styles.trashButton}
+          hitSlop={8}
+          onPress={() => confirmRemove(item)}
+          accessibilityLabel={`Remove ${item.name}`}
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.danger} />
+        </Pressable>
       </View>
     );
   };
 
   return (
-    <>
+    <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.spacerTop} />
         <View style={styles.storeCard}>
@@ -312,8 +457,31 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
             color={canFinish ? colors.onPrimary : colors.mutedOnDark}
           />
         </Pressable>
+
+        <Pressable style={styles.addStoreLink} onPress={() => setShowAddStore(true)}>
+          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Text style={styles.addStoreLinkText}>Add another store</Text>
+        </Pressable>
         <View style={styles.spacerTop} />
       </ScrollView>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.toast,
+          {
+            opacity: toastAnim,
+            transform: [
+              { translateX: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
+            ],
+          },
+        ]}
+      >
+        <Ionicons name="checkmark-circle" size={20} color={colors.textOnDark} />
+        <Text style={styles.toastText} numberOfLines={2}>
+          {toastMessage}
+        </Text>
+      </Animated.View>
 
       {/* Mark modal */}
       <Modal
@@ -322,62 +490,61 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
         animationType="slide"
         onRequestClose={() => setMarkId(null)}
       >
-        <View style={styles.sheetBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setMarkId(null)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle} numberOfLines={1}>
-                {markItem?.name}
-              </Text>
-              <Pressable onPress={() => setMarkId(null)} hitSlop={8} accessibilityLabel="Close">
-                <Ionicons name="close" size={24} color={colors.onPrimary} />
-              </Pressable>
-            </View>
+        <SafeAreaProvider>
+          <View style={styles.sheetBackdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setMarkId(null)} />
+            <View style={styles.sheet}>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle} numberOfLines={1}>
+                  {markItem?.name}
+                </Text>
+                <Pressable onPress={() => setMarkId(null)} hitSlop={8} accessibilityLabel="Close">
+                  <Ionicons name="close" size={24} color={colors.onPrimary} />
+                </Pressable>
+              </View>
 
-            <View style={styles.markBody}>
-              {OPTIONS.map((opt) => {
-                const meta = STATUS_META[opt.status];
-                const selected = markItem?.status === opt.status;
-                return (
-                  <Pressable
-                    key={opt.status}
-                    style={[
-                      styles.markOption,
-                      { borderColor: meta.color },
-                      selected && { backgroundColor: meta.color },
-                    ]}
-                    onPress={() => markItem && mark(markItem, opt.status)}
-                  >
-                    <Ionicons
-                      name={meta.icon}
-                      size={24}
-                      color={selected ? colors.textOnDark : meta.color}
-                    />
-                    <Text
+              <View style={styles.markBody}>
+                {OPTIONS.map((opt) => {
+                  const meta = STATUS_META[opt.status];
+                  const selected = markItem?.status === opt.status;
+                  return (
+                    <Pressable
+                      key={opt.status}
                       style={[
-                        styles.markOptionText,
-                        { color: selected ? colors.textOnDark : meta.color },
+                        styles.markOption,
+                        { borderColor: meta.color },
+                        selected && { backgroundColor: meta.color },
                       ]}
+                      onPress={() => markItem && mark(markItem, opt.status)}
                     >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <Ionicons
+                        name={meta.icon}
+                        size={24}
+                        color={selected ? colors.textOnDark : meta.color}
+                      />
+                      <Text
+                        style={[
+                          styles.markOptionText,
+                          { color: selected ? colors.textOnDark : meta.color },
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
 
-              {markItem && markItem.status !== 'pending' && (
-                <Pressable style={styles.sheetLink} onPress={() => clearMark(markItem)}>
-                  <Text style={styles.sheetLinkText}>Clear mark</Text>
-                </Pressable>
-              )}
-              {markItem?.is_unplanned === 1 && (
-                <Pressable style={styles.sheetLink} onPress={() => removeUnplanned(markItem)}>
-                  <Text style={[styles.sheetLinkText, { color: colors.danger }]}>Remove item</Text>
-                </Pressable>
-              )}
+                {markItem && markItem.status !== 'pending' && (
+                  <Pressable style={styles.sheetLink} onPress={() => clearMark(markItem)}>
+                    <Text style={styles.sheetLinkText}>Clear mark</Text>
+                  </Pressable>
+                )}
+              </View>
+              <SheetBottomInset />
             </View>
           </View>
-        </View>
+        </SafeAreaProvider>
+        
       </Modal>
 
       {/* Add item modal */}
@@ -404,7 +571,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                 autoFocus
                 onSubmitEditing={addUnplanned}
               />
-              {lastAdded && <Text style={styles.addedText}>✓ {lastAdded} added</Text>}
+              {lastAdded && <Text style={styles.addedText}>✓ {lastAdded}</Text>}
               <Pressable
                 style={[styles.modalPrimary, !clean(newItem) && styles.primaryDisabled]}
                 onPress={addUnplanned}
@@ -455,7 +622,17 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
           </View>
         </View>
       </Modal>
-    </>
+      <AddStoreDialog
+        visible={showAddStore}
+        tripId={tripId}
+        onClose={() => setShowAddStore(false)}
+        onAdded={(result, name) => {
+          setShowAddStore(false);
+          showToast(result.storeId === storeId ? `Items added to ${name}` : `${name} added to your trip`);
+          load();
+        }}
+      />
+    </View>
   );
 }
 
@@ -514,17 +691,17 @@ const styles = StyleSheet.create({
   markButton: {
     backgroundColor: colors.primary,
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 18,
-    minWidth: 88,
+    minWidth: 80,
     alignItems: 'center',
   },
   markButtonText: { color: colors.onPrimary, fontWeight: '700' },
   statusPill: {
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     borderRadius: 18,
-    minWidth: 88,
+    minWidth: 80,
     alignItems: 'center',
   },
   statusPillText: { color: colors.textOnDark, fontWeight: '700' },
@@ -648,4 +825,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  trashButton: { padding: 2 },
+  footerHint: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  addStoreLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  addStoreLinkText: { color: colors.primary, fontWeight: '700' },
+  root: { flex: 1 },
+  toast: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    maxWidth: '90%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.success,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radius.md,
+  },
+  toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
 });
