@@ -62,7 +62,7 @@ export default function AddStoreDialog({ visible, tripId, onClose, onAdded }: Pr
           <View style={styles.header}>
             <Text style={styles.title}>Add a store</Text>
             <Pressable onPress={close} hitSlop={8} accessibilityLabel="Close">
-              <Ionicons name="close" size={24} color={colors.onPrimary} />
+              <Ionicons name="close" size={24} color={colors.onColor} />
             </Pressable>
           </View>
 
@@ -98,7 +98,7 @@ export default function AddStoreDialog({ visible, tripId, onClose, onAdded }: Pr
                 onPress={addItem}
                 disabled={!pendingItem}
               >
-                <Text style={styles.addButtonText}>Add</Text>
+                <Text style={[styles.addButtonText, !pendingItem && styles.disabledText]}>Add</Text>
               </Pressable>
             </View>
 
@@ -126,7 +126,9 @@ export default function AddStoreDialog({ visible, tripId, onClose, onAdded }: Pr
               onPress={submit}
               disabled={!canSubmit}
             >
-              <Text style={styles.submitText}>{existing ? 'Add items' : 'Add store'}</Text>
+              <Text style={[styles.submitText, !canSubmit && styles.disabledText]}>
+                {existing ? 'Add items' : 'Add store'}
+              </Text>
             </Pressable>
             <Text style={styles.footnote}>A store needs at least one item to buy.</Text>
           </View>
@@ -143,13 +145,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
   },
-  title: { color: colors.onPrimary, fontSize: 17, fontWeight: '800' },
+  title: { color: colors.onColor, fontSize: 17, fontWeight: '800' },
   body: { padding: 16, gap: 8 },
   label: { fontWeight: '600', color: colors.text, marginTop: 4 },
   input: {
@@ -165,13 +167,13 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: 'row', gap: 8 },
   itemInput: { flex: 1 },
   addButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingHorizontal: 18,
     borderRadius: radius.md,
     justifyContent: 'center',
   },
   addButtonDisabled: { backgroundColor: colors.primaryDisabled },
-  addButtonText: { color: colors.onPrimary, fontWeight: '700' },
+  addButtonText: { color: colors.onColor, fontWeight: '700' },
   list: { maxHeight: 140 },
   listRow: {
     flexDirection: 'row',
@@ -184,13 +186,14 @@ const styles = StyleSheet.create({
   },
   listText: { flex: 1, color: colors.text, fontSize: 15 },
   submit: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
     marginTop: 8,
   },
   submitDisabled: { backgroundColor: colors.primaryDisabled },
-  submitText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  submitText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
   footnote: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
+  disabledText: { color: colors.onDisabled },
 });

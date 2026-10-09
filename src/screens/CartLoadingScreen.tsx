@@ -51,7 +51,7 @@ export default function CartLoadingScreen({ navigation, route }: Props) {
 
       <View style={styles.barArea} onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}>
         <Animated.View style={[styles.cart, { transform: [{ translateX: cartX }] }]}>
-          <Ionicons name="cart" size={CART_SIZE} color={colors.primary} />
+          <Ionicons name="cart" size={CART_SIZE} color={colors.accent} />
         </Animated.View>
         <View style={styles.track}>
           <Animated.View style={[styles.fill, { width: fillWidth }]} />
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   brand: {
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 28,
     fontWeight: '800',
     textAlign: 'center',
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   barArea: { width: '100%' },
   cart: { marginBottom: 6 },
-  track: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)' },
-  fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
-  message: { color: colors.textOnDark, textAlign: 'center', marginTop: 24, fontSize: 16 },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.border },
+  fill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
+  message: { color: colors.text, textAlign: 'center', marginTop: 24, fontSize: 16 },
 });

@@ -142,7 +142,7 @@ export default function PlanScreen({ navigation, route }: Props) {
       <Ionicons
         name={toast.kind === 'removed' ? 'trash' : 'checkmark-circle'}
         size={20}
-        color={colors.textOnDark}
+        color={colors.onColor}
       />
       <Text style={styles.toastText} numberOfLines={1}>
         {toast.message}
@@ -178,13 +178,13 @@ export default function PlanScreen({ navigation, route }: Props) {
             <Switch
               value={anyStore}
               onValueChange={setAnyStore}
-              trackColor={{ true: colors.primary, false: colors.border }}
+              trackColor={{ true: colors.accent, false: colors.border }}
               thumbColor={colors.surface}
             />
           </View>
 
           <Pressable style={styles.addButton} onPress={addItem}>
-            <Ionicons name="cart" size={18} color={colors.onPrimary} />
+            <Ionicons name="cart" size={18} color={colors.onColor} />
             <Text style={styles.addButtonText}>Add to cart</Text>
           </Pressable>
         </View>
@@ -193,7 +193,7 @@ export default function PlanScreen({ navigation, route }: Props) {
         <View style={styles.cartHandle} />
         <View style={styles.cartBody}>
           <View style={styles.cartHeader}>
-            <Ionicons name="cart" size={20} color={colors.onPrimary} />
+            <Ionicons name="cart" size={20} color={colors.onColor} />
             <Text style={styles.cartTitle}>Cart</Text>
             <View style={styles.cartCount}>
               <Text style={styles.cartCountText}>{items.length}</Text>
@@ -237,7 +237,7 @@ export default function PlanScreen({ navigation, route }: Props) {
           <Ionicons
             name="arrow-forward"
             size={18}
-            color={canProceed ? colors.onPrimary : colors.mutedOnDark}
+            color={canProceed ? colors.onColor : colors.onDisabled}
           />
         </Pressable>
       </ScrollView>
@@ -255,13 +255,13 @@ export default function PlanScreen({ navigation, route }: Props) {
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCart(false)} />
             <View style={styles.sheet}>
               <View style={styles.sheetHeader}>
-                <Ionicons name="cart" size={20} color={colors.onPrimary} />
+                <Ionicons name="cart" size={20} color={colors.onColor} />
                 <Text style={styles.cartTitle}>Cart</Text>
                 <View style={styles.cartCount}>
                   <Text style={styles.cartCountText}>{items.length}</Text>
                 </View>
                 <Pressable onPress={() => setShowCart(false)} hitSlop={8} accessibilityLabel="Close cart">
-                  <Ionicons name="close" size={24} color={colors.onPrimary} />
+                  <Ionicons name="close" size={24} color={colors.onColor} />
                 </Pressable>
               </View>
 
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   container: { padding: 16, paddingBottom: 48 },
 
-  formCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16 },
+  formCard: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 16, borderWidth: 1, borderColor: colors.border },
   label: { fontWeight: '600', marginBottom: 6, marginTop: 8, color: colors.text },
   input: {
     borderWidth: 1,
@@ -310,12 +310,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     padding: 14,
     borderRadius: radius.md,
     marginTop: 14,
   },
-  addButtonText: { color: colors.onPrimary, fontWeight: '700', fontSize: 16 },
+  addButtonText: { color: colors.onColor, fontWeight: '700', fontSize: 16 },
 
   cartHandle: {
     alignSelf: 'flex-start',
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderWidth: 4,
     borderBottomWidth: 0,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
@@ -336,28 +336,30 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     minHeight: 140,
+    borderWidth: 1, 
+    borderColor: colors.border
   },
   cartHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
   },
-  cartTitle: { color: colors.onPrimary, fontSize: 17, fontWeight: '800' },
+  cartTitle: { color: colors.onColor, fontSize: 17, fontWeight: '800' },
   cartCount: {
     marginLeft: 'auto',
-    backgroundColor: colors.onPrimary,
+    backgroundColor: colors.onColor,
     borderRadius: 12,
     minWidth: 24,
     paddingHorizontal: 8,
     paddingVertical: 2,
     alignItems: 'center',
   },
-  cartCountText: { color: colors.primary, fontWeight: '800' },
+  cartCountText: { color: colors.accent, fontWeight: '800' },
   cartEmpty: { alignItems: 'center', gap: 8, padding: 24 },
   cartEmptyText: { color: colors.textMuted, textAlign: 'center' },
   cartRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
@@ -377,24 +379,24 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 5,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     backgroundColor: colors.background,
   },
 
-  hint: { color: colors.amber, marginTop: 16 },
+  hint: { color: colors.warning, marginTop: 16 },
   proceedButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     padding: 16,
     borderRadius: radius.md,
     marginTop: 24,
   },
-  proceedDisabled: { backgroundColor: 'rgba(86,226,236,0.2)' },
-  proceedText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
-  proceedTextDisabled: { color: colors.mutedOnDark },
+  proceedDisabled: { backgroundColor: colors.primaryDisabled },
+  proceedText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
+  proceedTextDisabled: { color: colors.onDisabled },
 
   toast: {
     position: 'absolute',
@@ -409,7 +411,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: radius.md,
   },
-  toastText: { color: colors.textOnDark, fontWeight: '700', flexShrink: 1 },
+  toastText: { color: colors.onColor, fontWeight: '700', flexShrink: 1 },
   viewAllRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,7 +431,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopLeftRadius: 24,
@@ -437,12 +439,12 @@ const styles = StyleSheet.create({
   },
   sheetList: { flexShrink: 1 },
   sheetDone: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     margin: 16,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
   },
-  sheetDoneText: { color: colors.onPrimary, fontWeight: '700', fontSize: 16 },
+  sheetDoneText: { color: colors.onColor, fontWeight: '700', fontSize: 16 },
   toastRemoved: { backgroundColor: colors.danger },
 });

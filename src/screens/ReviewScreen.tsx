@@ -115,7 +115,7 @@ export default function ReviewScreen({ navigation, route }: Props) {
               <Text style={styles.date}>{trip ? formatDate(trip.created_at) : ''}</Text>
             </View>
             <View style={[styles.badge, completed ? styles.badgeSaved : styles.badgeReview]}>
-              <Text style={[styles.badgeText, completed && { color: colors.textOnDark }]}>
+              <Text style={[styles.badgeText, completed && { color: colors.onColor }]}>
                 {completed ? 'Saved' : 'Review'}
               </Text>
             </View>
@@ -210,7 +210,7 @@ export default function ReviewScreen({ navigation, route }: Props) {
               <Ionicons
                 name="checkmark-done"
                 size={20}
-                color={pendingCount > 0 ? colors.mutedOnDark : colors.onPrimary}
+                color={pendingCount > 0 ? colors.onDisabled : colors.onColor}
               />
               <Text style={[styles.finishText, pendingCount > 0 && styles.finishTextDisabled]}>
                 Finish trip
@@ -254,6 +254,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderBottomWidth: 0
   },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingHorizontal: 16 },
   headerText: { flex: 1 },
@@ -262,7 +265,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   badgeSaved: { backgroundColor: colors.success },
   badgeReview: { backgroundColor: colors.amber },
-  badgeText: { color: colors.onPrimary, fontWeight: '700', fontSize: 12 },
+  badgeText: { color: colors.onColor, fontWeight: '700', fontSize: 12 },
 
   dashed: {
     color: colors.border,
@@ -316,27 +319,27 @@ const styles = StyleSheet.create({
   },
 
   actions: { marginTop: 24, gap: 12 },
-  hint: { color: colors.amber },
+  hint: { color: colors.warning },
   finishButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     padding: 16,
     borderRadius: radius.md,
   },
-  finishDisabled: { backgroundColor: 'rgba(86,226,236,0.2)' },
-  finishText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
-  finishTextDisabled: { color: colors.mutedOnDark },
+  finishDisabled: { backgroundColor: colors.primaryDisabled },
+  finishText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
+  finishTextDisabled: { color: colors.onDisabled },
   secondaryButton: {
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     padding: 14,
     borderRadius: radius.md,
     alignItems: 'center',
   },
-  secondaryText: { color: colors.primary, fontWeight: '700', fontSize: 16 },
+  secondaryText: { color: colors.accent, fontWeight: '700', fontSize: 16 },
   secondaryRow: { flexDirection: 'row', gap: 12 },
   flex1: { flex: 1 },
 });
