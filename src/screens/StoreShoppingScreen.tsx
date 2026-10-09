@@ -577,7 +577,7 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
                 onPress={addUnplanned}
                 disabled={!clean(newItem)}
               >
-                <Text style={styles.modalPrimaryText}>Add item</Text>
+                <Text style={[styles.modalPrimaryText, !clean(newItem) && styles.disabledText]}>Add item</Text>
               </Pressable>
               <Pressable style={styles.sheetLink} onPress={closeAdd}>
                 <Text style={styles.sheetLinkText}>Done</Text>
@@ -611,7 +611,9 @@ export default function StoreShoppingScreen({ navigation, route }: Props) {
               onPress={addAnotherStore}
               disabled={!extraStore.trim()}
             >
-              <Text style={styles.modalPrimaryText}>Add store and continue</Text>
+              <Text style={[styles.modalPrimaryText, !extraStore.trim() && styles.disabledText]}>
+                Add store and continue
+              </Text>
             </Pressable>
             <Pressable style={styles.modalSecondary} onPress={sendLeftoversToBuyList}>
               <Text style={styles.modalSecondaryText}>Move to To buy list</Text>
@@ -851,4 +853,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   toastText: { color: colors.text, fontWeight: '700', flexShrink: 1 },
+  disabledText: { color: colors.onDisabled },
 });

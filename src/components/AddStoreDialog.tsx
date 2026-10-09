@@ -98,7 +98,7 @@ export default function AddStoreDialog({ visible, tripId, onClose, onAdded }: Pr
                 onPress={addItem}
                 disabled={!pendingItem}
               >
-                <Text style={styles.addButtonText}>Add</Text>
+                <Text style={[styles.addButtonText, !pendingItem && styles.disabledText]}>Add</Text>
               </Pressable>
             </View>
 
@@ -126,7 +126,9 @@ export default function AddStoreDialog({ visible, tripId, onClose, onAdded }: Pr
               onPress={submit}
               disabled={!canSubmit}
             >
-              <Text style={styles.submitText}>{existing ? 'Add items' : 'Add store'}</Text>
+              <Text style={[styles.submitText, !canSubmit && styles.disabledText]}>
+                {existing ? 'Add items' : 'Add store'}
+              </Text>
             </Pressable>
             <Text style={styles.footnote}>A store needs at least one item to buy.</Text>
           </View>
@@ -193,4 +195,5 @@ const styles = StyleSheet.create({
   submitDisabled: { backgroundColor: colors.primaryDisabled },
   submitText: { color: colors.onColor, fontSize: 16, fontWeight: '700' },
   footnote: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
+  disabledText: { color: colors.onDisabled },
 });
